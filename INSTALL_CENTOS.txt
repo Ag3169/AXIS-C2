@@ -223,8 +223,8 @@ DEFAULT CREDENTIALS
 ================================================================================
 
 Database: AXIS2 / axis / axis_password_123
-Admin: admin / dhcp146E
-API Key: AXIS2-ADMIN-7F3D9A2B-E8C1-4F6A
+Admin: admin / admin123
+API Key: AXIS2-ADMIN-APIKEY
 
 ================================================================================
 TROUBLESHOOTING
