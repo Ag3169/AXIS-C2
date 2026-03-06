@@ -217,8 +217,8 @@ Database:
 
 Admin Panel:
   Username: admin
-  Password: dhcp146E (CHANGE THIS!)
-  API Key: AXIS2-ADMIN-7F3D9A2B-E8C1-4F6A (CHANGE THIS!)
+  Password: admin123 (CHANGE THIS!)
+  API Key: AXIS2-ADMIN-APIKEY (CHANGE THIS!)
 
 ================================================================================
 TROUBLESHOOTING
