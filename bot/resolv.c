@@ -2,6 +2,7 @@
 #include "resolv.h"
 #include "rand.h"
 #include "protocol.h"
+#include "util.h"
 
 static uint32_t dns_server = 0x08080808; // 8.8.8.8
 

