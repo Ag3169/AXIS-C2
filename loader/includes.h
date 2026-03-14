@@ -1,6 +1,14 @@
 #ifndef _LOADER_INCLUDES_H
 #define _LOADER_INCLUDES_H
 
+/* ============================================================================
+ * AXIS 2.0 Loader - Common Include Header
+ * ============================================================================
+ * Standard library includes for loader modules
+ * Features: epoll-based event loop, pthread concurrency
+ * Connection limit: 65536 concurrent telnet sessions
+ * ============================================================================ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

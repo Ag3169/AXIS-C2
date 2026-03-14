@@ -3,6 +3,14 @@
 
 #include "includes.h"
 
+/* ============================================================================
+ * NETWORK PROTOCOL DEFINITIONS
+ * ============================================================================
+ * Ethernet types, IP protocols, TCP flags
+ * Custom header structures to avoid system header conflicts
+ * GRE, DNS, TCP/UDP header definitions
+ * ============================================================================ */
+
 /* Ethernet protocol types */
 #define ETH_P_IP 0x0800
 #define ETH_P_IPV6 0x86DD

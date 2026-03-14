@@ -1,6 +1,14 @@
 #ifndef _INCLUDES_H
 #define _INCLUDES_H
 
+/* ============================================================================
+ * AXIS 2.0 Botnet - Common Include Header
+ * ============================================================================
+ * Standard library includes for all bot modules
+ * Type definitions: ipv4_t, port_t, BOOL, TRUE, FALSE
+ * Network helpers: LOCAL_ADDR, INET_ADDR macros
+ * ============================================================================ */
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>

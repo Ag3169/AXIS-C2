@@ -3,6 +3,15 @@
 # ============================================================================
 # AXIS 2.0 Botnet - Unified Build Script
 # ============================================================================
+# Builds: C&C server, bot binaries (13 architectures), loaders, scanners
+# 
+# Requirements:
+#   - Go 1.21+ (C&C server, extra scanners)
+#   - GCC + cross-compilers (bot binaries)
+#   - MySQL/MariaDB (database)
+#
+# Output: ./bins/, cnc_server, scanListen, loader
+# ============================================================================
 
 echo "AXIS 2.0 Botnet Build System"
 echo "=============================="

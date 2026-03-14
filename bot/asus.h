@@ -1,5 +1,14 @@
 #ifdef SELFREP
 
+/* ============================================================================
+ * ASUS SCANNER - Router Command Injection (Port 8080)
+ * ============================================================================
+ * Exploit: ASUS RT-AC series command injection via tmUnblock.cgi
+ * Targets: ASUS RT-AC routers globally
+ * Method: CGI command injection
+ * Regions: All regions with ASUS router deployments
+ * ============================================================================ */
+
 #pragma once
 
 #include <stdint.h>

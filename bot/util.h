@@ -3,6 +3,15 @@
 
 #include "includes.h"
 
+/* ============================================================================
+ * UTILITY FUNCTIONS
+ * ============================================================================
+ * String: strlen, strcmp, strncmp, strcpy, strcat, memcpy, zero
+ * Number: atoi, itoa
+ * Search: memsearch, stristr (case-insensitive)
+ * Network: local_addr, fdgets, socket_and_bind
+ * ============================================================================ */
+
 /* String utilities */
 int util_strlen(char *);
 int util_strcmp(char *, char *);

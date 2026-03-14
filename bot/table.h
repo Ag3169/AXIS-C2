@@ -3,6 +3,14 @@
 
 #include "includes.h"
 
+/* ============================================================================
+ * STRING TABLE ENCRYPTION
+ * ============================================================================
+ * XOR-encrypted string table for sensitive data
+ * Protects: C&C domain, ports, scanner strings, attack payloads
+ * Key: 0xdeadbeef (change for production)
+ * ============================================================================ */
+
 #define TABLE_KEY 0xdeadbeef
 
 /* Table entry IDs */

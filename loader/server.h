@@ -1,6 +1,14 @@
 #ifndef _LOADER_SERVER_H
 #define _LOADER_SERVER_H
 
+/* ============================================================================
+ * SERVER MODULE - Telnet Connection Management
+ * ============================================================================
+ * Manages concurrent telnet connections with epoll
+ * Tracks: open connections, logins, successes, failures
+ * Upload methods: echoes, wgets, tftps counters
+ * ============================================================================ */
+
 #include "includes.h"
 #include "connection.h"
 

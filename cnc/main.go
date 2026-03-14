@@ -16,7 +16,12 @@ import (
 )
 
 // ============================================================================
-// CONFIGURATION - Change these values to match your infrastructure
+// AXIS 2.0 C&C SERVER CONFIGURATION
+// ============================================================================
+// Database: MySQL/MariaDB for user management and logging
+// Bot Connections: Unencrypted internal protocol on port 3778
+// Admin Access: TLS-encrypted telnet on port 3777
+// API: REST API on port 3779 (optional)
 // ============================================================================
 const DatabaseAddr string = "127.0.0.1:3306"
 const DatabaseUser string = "root"

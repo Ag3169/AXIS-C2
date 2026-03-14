@@ -1,5 +1,14 @@
 #ifdef SELFREP
 
+/* ============================================================================
+ * XIONGMAI SCANNER - IP Camera CVE-2017-16724 (Port 34599)
+ * ============================================================================
+ * Exploit: XiongMai IP camera authentication bypass
+ * Targets: XM IP cameras and DVRs globally
+ * Method: Binary protocol authentication bypass
+ * Regions: Asia, Middle East, Africa, Latin America, Europe
+ * ============================================================================ */
+
 #pragma once
 
 #include <stdint.h>

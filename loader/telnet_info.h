@@ -1,6 +1,14 @@
 #ifndef _LOADER_TELNET_INFO_H
 #define _LOADER_TELNET_INFO_H
 
+/* ============================================================================
+ * TELNET INFO MODULE - Credential Storage
+ * ============================================================================
+ * Stores parsed telnet credentials
+ * Fields: host, port, username, password, architecture
+ * Parsed from: IP:PORT username:password [arch] format
+ * ============================================================================ */
+
 #include "includes.h"
 
 struct telnet_info {

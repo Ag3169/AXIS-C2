@@ -1,6 +1,14 @@
 #ifndef _LOADER_CONNECTION_H
 #define _LOADER_CONNECTION_H
 
+/* ============================================================================
+ * CONNECTION MODULE - Telnet State Machine
+ * ============================================================================
+ * 18 States: Closed -> Connecting -> IAC -> Login -> Upload -> Run -> Cleanup
+ * Handles: Authentication, architecture detection, binary transfer
+ * Timeout protection with last_recv tracking
+ * ============================================================================ */
+
 #include "includes.h"
 #include "telnet_info.h"
 #include "server.h"

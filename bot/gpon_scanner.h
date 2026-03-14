@@ -1,6 +1,15 @@
 #ifndef _GPON_SCANNER_H
 #define _GPON_SCANNER_H
 
+/* ============================================================================
+ * GPON SCANNER - FTTH/ONT Command Injection (Ports 80, 8080)
+ * ============================================================================
+ * Exploit: GPON/ONT command injection via diag_Form
+ * Targets: FTTH ONT/ONU devices globally
+ * Regions: Latin America, Asia, Middle East, Africa, Europe
+ * Brands: Various GPON equipment manufacturers
+ * ============================================================================ */
+
 #include "includes.h"
 
 /* GPON scanner configuration */
