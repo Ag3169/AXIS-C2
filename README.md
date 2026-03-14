@@ -72,8 +72,8 @@ This is **SOURCE CODE ONLY** - not a finished product. You must:
 14. **CLDAP Amplification** - 50x-70x amplification factor
 
 #### Layer 7 Attacks (2 methods)
-15. **AXIS-L7** - Browser emulation with Cloudflare bypass
-16. **ULTIMATE L7** - Advanced multi-layer bypass (CF, Akamai, WAF) with 10 rotating user-agents, session management, response analysis
+15. **http** - http flood optimized for requests per second
+16. **AXIS L7** - Advanced multi-layer bypass (CF, Akamai, WAF) with 10 rotating user-agents, session management, response analysis
 
 ### Self-Replication Scanners (14 Bot-Based)
 
