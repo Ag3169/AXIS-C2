@@ -7,9 +7,9 @@
  * ATTACK VECTORS - 16 Optimized DDoS Methods
  * ============================================================================
  * Layer 4 (9 methods): TCP, UDP, OVH bypass, ICMP, GRE, Combined
- * Layer 7 (3 methods): HTTP, AXIS-L7, ULTIMATE-L7
- * Amplification (4 methods): DNS, NTP, SSDP, SNMP, CLDAP
- * 
+ * Layer 7 (2 methods): HTTP, AXIS-L7
+ * Amplification (5 methods): DNS, NTP, SSDP, SNMP, CLDAP
+ *
  * Performance: Gbps-scale volumetric attacks
  * Bypass: OVH Game, Cloudflare, Akamai, WAF evasion
  * ============================================================================ */

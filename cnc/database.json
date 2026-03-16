@@ -1,0 +1,37 @@
+{
+  "users": [
+    {
+      "username": "admin",
+      "password": "admin123",
+      "tier": "admin",
+      "api_key": "AXIS2-ADMIN-APIKEY",
+      "created_at": 1710000000,
+      "last_login": 0,
+      "last_paid": 1710000000,
+      "interval": 0,
+      "cooldown": 0,
+      "wrc": 0
+    }
+  ],
+  "history": [],
+  "logins": [],
+  "whitelist": [
+    {
+      "prefix": "10.0.0.0",
+      "netmask": "8"
+    },
+    {
+      "prefix": "172.16.0.0",
+      "netmask": "12"
+    },
+    {
+      "prefix": "192.168.0.0",
+      "netmask": "16"
+    },
+    {
+      "prefix": "127.0.0.0",
+      "netmask": "8"
+    }
+  ],
+  "online": []
+}
