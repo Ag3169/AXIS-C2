@@ -164,8 +164,8 @@ cat logs/logins.txt
 ### Layer 4 UDP
 ```
 udp <ip> <time> [len=1472] [dport=80]
-game <ip> <time> [dport=27015]
-discord <ip> <time>
+vse <ip> <time> [dport=27015]
+fivem <ip> <time> [dport=30120]
 pps <ip> <time>
 ```
 

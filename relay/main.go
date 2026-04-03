@@ -218,12 +218,12 @@ func getAttackID(method string) uint8 {
 		return 6
 	case "udp":
 		return 0
+	case "vse":
+		return 1
+	case "fivem":
+		return 2
 	case "pps":
 		return 3
-	case "game":
-		return 1
-	case "discord":
-		return 2
 	default:
 		return 255
 	}

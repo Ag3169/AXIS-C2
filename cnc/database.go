@@ -27,17 +27,17 @@ var TierPermissions = map[string]TierConfig{
 	TierPremium: {
 		MaxDuration:   180,
 		MaxBots:       500,
-		AttackMethods: []string{"udp", "pps", "game", "discord", "dns-amp", "ntp-amp"},
+		AttackMethods: []string{"udp", "pps", "vse", "fivem", "dns-amp", "ntp-amp"},
 	},
 	TierVIP: {
 		MaxDuration:   600,
 		MaxBots:       -1,
-		AttackMethods: []string{"udp", "pps", "game", "discord", "tls", "tlsplus", "cf", "axis-l7", "dns-amp", "ntp-amp", "ssdp-amp", "snmp-amp", "cldap-amp"},
+		AttackMethods: []string{"udp", "pps", "vse", "fivem", "tls", "tlsplus", "cf", "axis-l7", "dns-amp", "ntp-amp", "ssdp-amp", "snmp-amp", "cldap-amp"},
 	},
 	TierAdmin: {
 		MaxDuration:   -1,
 		MaxBots:       -1,
-		AttackMethods: []string{"udp", "pps", "game", "discord", "tls", "tlsplus", "cf", "axis-l7", "dns-amp", "ntp-amp", "ssdp-amp", "snmp-amp", "cldap-amp"},
+		AttackMethods: []string{"udp", "pps", "vse", "fivem", "tls", "tlsplus", "cf", "axis-l7", "dns-amp", "ntp-amp", "ssdp-amp", "snmp-amp", "cldap-amp"},
 	},
 }
 

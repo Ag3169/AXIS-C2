@@ -22,6 +22,8 @@ ATTACKS = {
     "tls": 4,
     "cf": 6,
     "udp": 0,
+    "vse": 1,
+    "fivem": 2,
     "pps": 3,
 }
 

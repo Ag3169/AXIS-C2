@@ -170,9 +170,9 @@ func getAttackID(method string) uint8 {
 	switch method {
 	case "udp":
 		return 0
-	case "game":
+	case "vse":
 		return 1
-	case "discord":
+	case "fivem":
 		return 2
 	case "pps":
 		return 3

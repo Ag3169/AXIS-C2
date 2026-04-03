@@ -154,6 +154,30 @@ TTL max: 5 hops (prevents infinite loops)
 [AttackID:1][TargetCount:1][IP:4][Netmask:1][OptionsCount:1][Options...][Duration:4 LE]
 ```
 
+### Attack Methods (24 Total)
+| ID | Name | Description |
+|----|------|-------------|
+| 0 | `udp` | UDP flood |
+| 1 | `vse` | Valve Source Engine A2S_INFO amplification |
+| 2 | `fivem` | FiveM protocol flood (getinfo/sec/token) |
+| 3 | `pps` | High PPS UDP flood |
+| 4 | `tls` | TLS/HTTPS flood |
+| 5 | `tlsplus` | Enhanced TLS flood |
+| 6 | `cf` | Cloudflare bypass flood |
+| 7 | `axis-l7` | Advanced L7 with WAF bypasses |
+| 8-12 | `*-amp` | DNS/NTP/SSDP/SNMP/CLDAP amplification |
+| 13-20 | `syn`-`window` | TCP floods |
+| 21-23 | `icmp`/`greip`/`greeth` | Special |
+
+### Proxy Configuration
+Proxy lists are stored in `proxies/` directory:
+- `proxies/http.txt` — HTTP proxies
+- `proxies/https.txt` — HTTPS proxies
+- `proxies/socks4.txt` — SOCKS4 proxies
+- `proxies/socks5.txt` — SOCKS5 proxies
+
+Proxies are used by CNC to shield its IP when injecting attack commands into the P2P network.
+
 ### Bot Auto-Maintenance
 - Peer ping every 30s (random 3 peers)
 - Peer timeout: 120s
