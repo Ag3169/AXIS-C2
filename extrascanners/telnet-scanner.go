@@ -205,7 +205,7 @@ func main() {
 		threads, _ = strconv.Atoi(os.Args[2])
 	}
 
-	fmt.Printf("[*] AXIS 2.0 Server-Side Telnet Scanner\n")
+	fmt.Printf("[*] AXIS 3.0 Server-Side Telnet Scanner\n")
 	fmt.Printf("[*] Loading IP list from: %s\n", ipFile)
 	fmt.Printf("[*] Using %d concurrent threads\n", threads)
 

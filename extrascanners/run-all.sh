@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================================================
-# AXIS 2.0 - Extra Scanners Auto-Runner
+# AXIS 3.0 - Extra Scanners Auto-Runner
 # Runs all 3 server-side scanners simultaneously to load bots
 # ============================================================================
 
@@ -9,7 +9,7 @@ SERVER_IP="${1:-$(curl -s ifconfig.me)}"
 THREADS="${2:-1000}"
 
 echo "============================================================================"
-echo "AXIS 2.0 Extra Scanners - Auto-Runner"
+echo "AXIS 3.0 Extra Scanners - Auto-Runner"
 echo "============================================================================"
 echo "Server IP: $SERVER_IP"
 echo "Threads per scanner: $THREADS"

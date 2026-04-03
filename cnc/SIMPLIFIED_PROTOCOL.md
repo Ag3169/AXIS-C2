@@ -1,8 +1,8 @@
-# AXIS 2.0 - Ultra-Simplified Bot Protocol
+# AXIS 3.0 - Ultra-Simplified Bot Protocol
 
 ## Overview
 
-AXIS 2.0 uses the **absolute minimal protocol possible**:
+AXIS 3.0 uses the **absolute minimal protocol possible**:
 - **TLS 1.3 encryption** on port 443 (standard HTTPS)
 - **No authentication** - TLS provides security
 - **1-step handshake** (just ACK)
@@ -285,5 +285,5 @@ openssl s_client -connect YOUR_SERVER_IP:6969 -quiet
 
 ---
 
-**AXIS 2.0 - Ultra-Simplified Bot Protocol**  
+**AXIS 3.0 - Ultra-Simplified Bot Protocol**  
 *Minimal, secure, stealthy - zero bloat*

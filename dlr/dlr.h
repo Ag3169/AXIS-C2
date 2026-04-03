@@ -1,5 +1,5 @@
 /*
- * AXIS 2.0 Downloader Configuration
+ * AXIS 3.0 Downloader Configuration
  */
 
 #ifndef _DLR_H

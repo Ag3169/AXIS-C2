@@ -130,7 +130,7 @@ func main() {
 		threads, _ = strconv.Atoi(os.Args[3])
 	}
 
-	fmt.Printf("[*] AXIS 2.0 Randox86 Exploit Scanner\n")
+	fmt.Printf("[*] AXIS 3.0 Randox86 Exploit Scanner\n")
 	fmt.Printf("[*] Loading targets from: %s\n", targetFile)
 	fmt.Printf("[*] Command: %s\n", command)
 	fmt.Printf("[*] Using %d concurrent threads\n", threads)

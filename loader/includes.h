@@ -2,7 +2,7 @@
 #define _LOADER_INCLUDES_H
 
 /* ============================================================================
- * AXIS 2.0 Loader - Common Include Header
+ * AXIS 3.0 Loader - Common Include Header
  * ============================================================================
  * Standard library includes for loader modules
  * Features: epoll-based event loop, pthread concurrency

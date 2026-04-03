@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Building AXIS 2.0 P2P Relay Server..."
+echo "Building AXIS 3.0 P2P Relay Server..."
 
 cd relay
 

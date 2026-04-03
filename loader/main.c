@@ -15,7 +15,7 @@ int main(int argc, char **args) {
     struct sockaddr_in addr;
     int opt = 1;
 
-    printf("AXIS 2.0 Botnet Loader\n");
+    printf("AXIS 3.0 Botnet Loader\n");
     printf("========================\n\n");
 
     if (!binary_init()) {

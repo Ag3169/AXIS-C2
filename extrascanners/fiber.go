@@ -292,7 +292,7 @@ func main() {
 		threads, _ = strconv.Atoi(os.Args[3])
 	}
 
-	fmt.Printf("[*] AXIS 2.0 Fiber/GPON Exploit Scanner\n")
+	fmt.Printf("[*] AXIS 3.0 Fiber/GPON Exploit Scanner\n")
 	fmt.Printf("[*] Loading targets from: %s\n", targetFile)
 	fmt.Printf("[*] Payload server: %s\n", serverIP)
 	fmt.Printf("[*] Using %d concurrent threads\n", threads)

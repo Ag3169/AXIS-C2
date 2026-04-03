@@ -1,8 +1,8 @@
-# AXIS 2.0 P2P - Complete Documentation
+# AXIS 3.0 P2P - Complete Documentation
 
 ## Overview
 
-AXIS 2.0 P2P is a fully decentralized peer-to-peer botnet using **torrent-style binary distribution**. Every bot simultaneously executes DDoS attacks, self-replicates via 20+ exploit scanners, and **seeds ALL bot binaries** to newly infected devices — exactly like a BitTorrent swarm where every peer is a seeder.
+AXIS 3.0 P2P is a fully decentralized peer-to-peer botnet using **torrent-style binary distribution**. Every bot simultaneously executes DDoS attacks, self-replicates via 20+ exploit scanners, and **seeds ALL bot binaries** to newly infected devices — exactly like a BitTorrent swarm where every peer is a seeder.
 
 ### Key Design Principles (from `how it should work.txt`)
 

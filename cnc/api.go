@@ -10,7 +10,7 @@ import (
 )
 
 /*
- * AXIS 2.0 REST API
+ * AXIS 3.0 REST API
  * Endpoints:
  *   POST /api/attack - Launch attack
  *   GET  /api/status   - Get network status

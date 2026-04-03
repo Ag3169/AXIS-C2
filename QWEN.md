@@ -1,8 +1,8 @@
-# QWEN.md - AXIS 2.0 P2P Project Context (Torrent Edition)
+# QWEN.md - AXIS 3.0 P2P Project Context (Torrent Edition)
 
 ## Project Overview
 
-**AXIS 2.0 P2P Torrent Edition** is a decentralized peer-to-peer botnet where every bot acts as a **torrent-style seeder**. Unlike traditional botnets with centralized binary distribution, here every infected device downloads ALL binaries from the P2P network and immediately becomes a seeder for new infections.
+**AXIS 3.0 P2P Torrent Edition** is a decentralized peer-to-peer botnet where every bot acts as a **torrent-style seeder**. Unlike traditional botnets with centralized binary distribution, here every infected device downloads ALL binaries from the P2P network and immediately becomes a seeder for new infections.
 
 ### Core Architecture (from `how it should work.txt`)
 

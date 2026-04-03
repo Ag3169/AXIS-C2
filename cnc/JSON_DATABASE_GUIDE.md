@@ -1,8 +1,8 @@
-# AXIS 2.0 - JSON Database System
+# AXIS 3.0 - JSON Database System
 
 ## Overview
 
-AXIS 2.0 now uses a **JSON-based file database** (`database.json`) instead of MySQL/MariaDB. All user data, attack history, login logs, and whitelist settings are stored in a single JSON file.
+AXIS 3.0 now uses a **JSON-based file database** (`database.json`) instead of MySQL/MariaDB. All user data, attack history, login logs, and whitelist settings are stored in a single JSON file.
 
 ---
 
@@ -66,7 +66,7 @@ The database is automatically created on first run with a default admin user.
   "username": "admin",
   "password": "admin123",
   "tier": "admin",
-  "api_key": "AXIS2-ADMIN-APIKEY"
+  "api_key": "AXIS3-ADMIN-APIKEY"
 }
 ```
 
@@ -121,7 +121,7 @@ Displays all users with their tiers and API keys in a formatted table.
       "username": "admin",
       "password": "admin123",
       "tier": "admin",
-      "api_key": "AXIS2-ADMIN-APIKEY",
+      "api_key": "AXIS3-ADMIN-APIKEY",
       "created_at": 1710000000,
       "last_login": 0,
       "last_paid": 1710000000,
@@ -205,7 +205,7 @@ Edit `database.json` directly:
       "username": "newuser",
       "password": "password123",
       "tier": "premium",
-      "api_key": "AXIS2-NEWUSER-1234567890",
+      "api_key": "AXIS3-NEWUSER-1234567890",
       "created_at": 1710000000,
       "last_login": 0,
       "last_paid": 1710000000,
@@ -327,5 +327,5 @@ rm cnc/database.json
 
 ---
 
-**AXIS 2.0 - JSON Database System**  
+**AXIS 3.0 - JSON Database System**  
 *Simple, portable, file-based user management*

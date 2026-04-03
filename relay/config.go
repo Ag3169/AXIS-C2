@@ -1,7 +1,7 @@
 package main
 
 /*
- * AXIS 2.0 P2P Relay Configuration
+ * AXIS 3.0 P2P Relay Configuration
  */
 
 const (

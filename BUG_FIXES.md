@@ -1,4 +1,4 @@
-# BUG FIXES & CHANGELOG - AXIS 2.0 P2P Torrent Edition
+# BUG FIXES & CHANGELOG - AXIS 3.0 P2P Torrent Edition
 
 ## Latest Changes (Torrent Edition Refactor)
 

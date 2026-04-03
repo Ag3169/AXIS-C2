@@ -2,7 +2,7 @@
 #define _LOADER_CONFIG_H
 
 /* ============================================================================
- * AXIS 2.0 Loader Configuration
+ * AXIS 3.0 Loader Configuration
  * ============================================================================
  * CRITICAL: Change 0.0.0.0 to your server IP before building!
  * 

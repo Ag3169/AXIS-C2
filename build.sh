@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "AXIS 2.0 Build"
+echo "AXIS 3.0 Build"
 echo "=============="
 echo ""
 

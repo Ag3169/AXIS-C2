@@ -167,7 +167,7 @@ func (this *Database) createDefaultAdmin() {
 		Username:  "admin",
 		Password:  "admin123",
 		Tier:      TierAdmin,
-		APIKey:    "AXIS2-ADMIN-APIKEY",
+		APIKey:    "AXIS3-ADMIN-APIKEY",
 		CreatedAt: time.Now().Unix(),
 		LastLogin: 0,
 		LastPaid:  time.Now().Unix(),
@@ -724,5 +724,5 @@ func (this *Database) UpdateLastLogin(username string) {
 }
 
 func generateAPIKey(username string) string {
-	return fmt.Sprintf("AXIS2-%s-%d", strings.ToUpper(username), time.Now().Unix())
+	return fmt.Sprintf("AXIS3-%s-%d", strings.ToUpper(username), time.Now().Unix())
 }

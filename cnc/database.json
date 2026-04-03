@@ -4,7 +4,7 @@
       "username": "admin",
       "password": "admin123",
       "tier": "admin",
-      "api_key": "AXIS2-ADMIN-APIKEY",
+      "api_key": "AXIS3-ADMIN-APIKEY",
       "created_at": 1710000000,
       "last_login": 0,
       "last_paid": 1710000000,
