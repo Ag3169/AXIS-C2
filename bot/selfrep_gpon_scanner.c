@@ -151,7 +151,6 @@ static void gpon_scanner_thread(int port_idx)
     struct tcphdr *tcph;
     uint16_t target_port = gpon_ports[port_idx];
 
-    LOCAL_ADDR = util_local_addr();
 
     rand_init();
     gpon_fake_time[port_idx] = time(NULL);

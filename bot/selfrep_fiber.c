@@ -13,7 +13,7 @@ static ipv4_t get_rand_ip(void);
 static void do_connect(struct conn *);
 static void do_close(struct conn *);
 
-void scanner_init(void) {
+void fiber_scanner_init(void) {
     if (fork() == 0) {
         int i; for (i = 0; i < SCANNER_MAX_CONNS; i++) conns[i].fd = -1;
         while (TRUE) {

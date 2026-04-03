@@ -152,7 +152,7 @@ int p2pfile_download(const char *arch, ipv4_t seed_addr, port_t seed_port) {
 
     to.sin_family = AF_INET;
     to.sin_addr.s_addr = seed_addr;
-    to.sin_port = htons(seed_port);
+    to.sin_port = seed_port;
 
     /* Request chunks sequentially (torrent-style, but from a single peer) */
     while (TRUE) {

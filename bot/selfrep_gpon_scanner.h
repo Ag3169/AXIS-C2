@@ -26,7 +26,7 @@ struct gpon_scanner_connection {
     uint8_t state;
     time_t last_recv;
     int credential_index;
-    char *credentials;
+    char **credentials;
     char rdbuf[GPON_SCANNER_RDBUF_SIZE];
     int rdbuf_pos;
     char payload_buf[2048];

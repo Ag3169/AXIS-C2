@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"strings"
@@ -115,7 +114,7 @@ func (this *Database) load() error {
 	this.mu.Lock()
 	defer this.mu.Unlock()
 
-	data, err := ioutil.ReadFile(this.filename)
+	data, err := os.ReadFile(this.filename)
 	if err != nil {
 		// File doesn't exist, create with default admin user
 		this.createDefaultAdmin()
@@ -152,7 +151,7 @@ func (this *Database) save() error {
 		return err
 	}
 
-	return ioutil.WriteFile(this.filename, data, 0600)
+	return os.WriteFile(this.filename, data, 0600)
 }
 
 func (this *Database) createDefaultAdmin() {

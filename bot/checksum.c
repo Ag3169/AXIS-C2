@@ -46,6 +46,10 @@ uint16_t checksum_tcpudp(struct iphdr *iph, uint16_t *buff, uint16_t data_len, u
     // Fold 32-bit sum to 16 bits
     while (sum >> 16)
         sum = (sum & 0xFFFF) + (sum >> 16);
-    
+
     return ~sum;
+}
+
+uint16_t checksum_icmp(uint16_t *addr, uint16_t count) {
+    return checksum_generic(addr, count);
 }

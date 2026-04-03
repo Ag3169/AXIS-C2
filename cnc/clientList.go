@@ -1,9 +1,7 @@
 package main
 
 import (
-	"math/rand"
 	"sync"
-	"time"
 )
 
 type AttackSend struct {
@@ -87,8 +85,6 @@ func (this *ClientList) fastCountWorker() {
 }
 
 func (this *ClientList) worker() {
-	rand.Seed(time.Now().UTC().UnixNano())
-
 	for {
 		select {
 		case add := <-this.addQueue:

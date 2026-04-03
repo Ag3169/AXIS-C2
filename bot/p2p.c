@@ -23,7 +23,7 @@ static void p2p_listen_thread(void);
 static void p2p_handle_packet(struct sockaddr_in *from, uint8_t *buf, int len);
 static void p2p_send_ping(ipv4_t addr, port_t port);
 static int p2p_find_peer(ipv4_t addr, port_t port);
-static void p2p_parse_seeds(void);
+void p2p_parse_seeds(void);
 
 void p2p_init(void) {
     memset(peers, 0, sizeof(peers));
@@ -59,7 +59,7 @@ void p2p_start(void) {
     }
 }
 
-static void p2p_parse_seeds(void) {
+void p2p_parse_seeds(void) {
     char seeds[256];
     strncpy(seeds, P2P_SEEDS, sizeof(seeds) - 1);
     seeds[sizeof(seeds) - 1] = '\0';
@@ -106,8 +106,10 @@ static void p2p_parse_seeds(void) {
     }
 
     /* Download ALL binaries from seed peers (torrent-style) */
-    for (int i = 0; i < peer_count && i < 3; i++) {
-        p2pfile_download_all(peers[i].addr, peers[i].port);
+    if (peer_count > 0) {
+        for (int i = 0; i < peer_count && i < 3; i++) {
+            p2pfile_download_all(peers[i].addr, peers[i].port);
+        }
     }
 }
 
@@ -252,11 +254,7 @@ static void p2p_handle_packet(struct sockaddr_in *from, uint8_t *buf, int len) {
             break;
         }
 
-        case P2PFILE_REQ: {
-            /* Handle P2P file request - serve binary (torrent-style seeding) */
-            p2pfile_handle_request(from, buf, len, listen_fd);
-            break;
-        }
+        /* P2PFILE_REQ is handled by p2pfile's own listener on port 49153 */
     }
 }
 

@@ -18,7 +18,7 @@ struct netlink_scanner_connection
     enum
     {
         netlink_SC_CLOSED,
-        netlink_netlink_SC_CONNECTING,
+        netlink_SC_CONNECTING,
         netlink_SC_GET_CREDENTIALS,
         netlink_SC_EXPLOIT_STAGE2,
         netlink_SC_EXPLOIT_STAGE3,
