@@ -222,6 +222,8 @@ func getAttackID(method string) uint8 {
 		return 1
 	case "fivem":
 		return 2
+	case "discord":
+		return 30
 	case "pps":
 		return 3
 	default:

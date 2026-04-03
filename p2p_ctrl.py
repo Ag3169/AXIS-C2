@@ -24,6 +24,7 @@ ATTACKS = {
     "udp": 0,
     "vse": 1,
     "fivem": 2,
+    "discord": 30,
     "pps": 3,
 }
 

