@@ -39,4 +39,8 @@ int util_fdgets(char *, int, int);
 /* Socket utilities */
 int util_socket_and_bind(char *bind_addr);
 
+/* URL parsing - extracts domain, path, port from URL */
+/* Returns: 0 = HTTP (port 80), 1 = HTTPS (port 443), -1 = error */
+int util_parse_url(char *url, char *domain, int domain_max, char *path, int path_max, int *port);
+
 #endif

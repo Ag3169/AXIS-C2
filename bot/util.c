@@ -213,3 +213,56 @@ int util_socket_and_bind(char *bind_addr) {
 
     return fd;
 }
+
+/*
+ * Parse URL into components
+ * Handles: http://domain.com/path, https://domain.com:port/path, domain.com/path
+ * Returns: 0 = HTTP (default port 80), 1 = HTTPS (default port 443), -1 = error
+ */
+int util_parse_url(char *url, char *domain, int domain_max, char *path, int path_max, int *port) {
+    char *p = url;
+    int is_https = 0;
+
+    /* Check for protocol */
+    if (util_stristr(p, util_strlen(p), "https://")) {
+        is_https = 1;
+        p += 8;
+    } else if (util_stristr(p, util_strlen(p), "http://")) {
+        is_https = 0;
+        p += 7;
+    }
+
+    /* Extract domain (and optional port) */
+    char *slash = p;
+    while (*slash != '/' && *slash != 0) slash++;
+
+    int domain_len = slash - p;
+    if (domain_len > domain_max - 1) domain_len = domain_max - 1;
+
+    /* Check for port in domain */
+    char *colon = p;
+    while (colon < slash && *colon != ':') colon++;
+
+    if (colon < slash) {
+        /* Domain has explicit port */
+        int dlen = colon - p;
+        if (dlen > domain_max - 1) dlen = domain_max - 1;
+        util_memcpy(domain, p, dlen);
+        domain[dlen] = 0;
+        *port = util_atoi(colon + 1);
+    } else {
+        /* No explicit port */
+        util_memcpy(domain, p, domain_len);
+        domain[domain_len] = 0;
+        *port = is_https ? 443 : 80;
+    }
+
+    /* Extract path */
+    if (*slash == '/') {
+        util_strcpy(path, slash);
+    } else {
+        util_strcpy(path, "/");
+    }
+
+    return is_https;
+}

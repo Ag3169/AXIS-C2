@@ -12,6 +12,15 @@
 #define P2P_PEER_TIMEOUT 120
 #define P2P_SEEDS ""
 
+/* DNS servers for L7 attack domain resolution (rotated randomly) */
+#define DNS_SERVER_1  0x01010101  /* 1.1.1.1 - Cloudflare */
+#define DNS_SERVER_2  0x08080808  /* 8.8.8.8 - Google */
+#define DNS_SERVER_3  0x08080404  /* 8.8.4.4 - Google secondary */
+#define DNS_SERVER_4  0x09090909  /* 9.9.9.9 - Quad9 */
+#define DNS_SERVER_5  0x01000001  /* 1.0.0.1 - Cloudflare secondary */
+#define DNS_SERVER_6  0x761E097A  /* 118.118.9.122 - China fallback */
+#define DNS_SERVER_7  0x80808080  /* 128.128.128.128 - General fallback */
+
 /* Scan callback port */
 #define SCAN_CB_PORT 9555
 

