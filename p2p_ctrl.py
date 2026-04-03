@@ -18,8 +18,8 @@ SEEDS = [
 # Attack method IDs (must match bot/attack.h)
 ATTACKS = {
     "axis-l7": 7,
-    "tlsplus": 5,
     "tls": 4,
+    "http": 5,
     "cf": 6,
     "udp": 0,
     "vse": 1,
