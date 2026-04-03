@@ -1,0 +1,10 @@
+ok so, here is how this should work
+the botnet works over p2p and the bots download the bot files as torrents
+everything in the scanners-exploits directory should be added to /bot but work as selfreplictions that add every bot binary onto every new bot it infects
+/loader is for loading telnet devcies into the net, it should download the bot binarys onto the bots via torrent as i already said and then the new bots that get infected should start self replication using the scanners and exploits
+bots should be both seeders and attackers at the same time by seeding downloads for new bots and being nodes for attacks at the same time
+the cnc should auto detect all the bots in the net the same way torrents autodetect all the peers and seeders for the torrent
+the cnc should work like a normal mirai cnc but customized for the p2p net by everytime it launches at attack it "joins" the botnet via a list of proxies to shield the IP of the main server, but it doesnt quite work like that because it only joins in a way that can spread the attack commands throughout the net
+the cnc should stop seeding downloads for the binary after the net reaches 200 bots
+if the net dips below 200 bots it should start seeding downloads for the binary again
+make a new folder called seeder to make it seed attack commands for the net the same way i descriped on line 7, it should also be written in golang

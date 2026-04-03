@@ -1,7 +1,3 @@
-/*
- * Production Botnet Loader - Utility Implementation
- */
-
 #include "includes.h"
 #include "util.h"
 

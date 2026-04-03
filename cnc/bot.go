@@ -6,14 +6,15 @@ import (
 )
 
 type Bot struct {
-	uid     int
-	conn    net.Conn
-	version byte
-	source  string
+	uid      int
+	conn     net.Conn
+	version  byte
+	source   string
+	lastSeen time.Time
 }
 
 func NewBot(conn net.Conn, version byte, source string) *Bot {
-	return &Bot{-1, conn, version, source}
+	return &Bot{-1, conn, version, source, time.Now()}
 }
 
 func (this *Bot) Handle() {

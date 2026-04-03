@@ -1,14 +1,6 @@
 #ifndef _INCLUDES_H
 #define _INCLUDES_H
 
-/* ============================================================================
- * AXIS 2.0 Botnet - Common Include Header
- * ============================================================================
- * Standard library includes for all bot modules
- * Type definitions: ipv4_t, port_t, BOOL, TRUE, FALSE
- * Network helpers: LOCAL_ADDR, INET_ADDR macros
- * ============================================================================ */
-
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,11 +28,9 @@
 #include <linux/if.h>
 #include <linux/sockios.h>
 
-/* Type definitions */
 typedef uint32_t ipv4_t;
 typedef uint16_t port_t;
 
-/* Boolean */
 #ifndef BOOL
 #define BOOL int
 #endif
@@ -51,7 +41,6 @@ typedef uint16_t port_t;
 #define FALSE 0
 #endif
 
-/* Local address helper macros */
 #define LOCAL_ADDR (util_local_addr())
 #define LOCAAL_ADDR(x) (((uint8_t *)&(x))[0])
 #define LOCAAL_ADDR_1(x) (((uint8_t *)&(x))[1])
@@ -59,12 +48,10 @@ typedef uint16_t port_t;
 #define LOCAAL_ADDR_3(x) (((uint8_t *)&(x))[3])
 #define INET_ADDR(o1,o2,o3,o4) (htonl(((o1 << 24) | (o2 << 16) | (o3 << 8) | o4)))
 
-/* File descriptors */
 #define STDIN 0
 #define STDOUT 1
 #define STDERR 2
 
-/* Configuration */
 #include "config.h"
 
 #endif

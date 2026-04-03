@@ -25,5 +25,6 @@ struct binary {
 
 BOOL binary_init(void);
 char *binary_get_by_arch(char *);
+char *binary_build_p2p_payload(const char *seed_ip);
 
 #endif

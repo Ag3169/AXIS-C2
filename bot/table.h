@@ -3,17 +3,8 @@
 
 #include "includes.h"
 
-/* ============================================================================
- * STRING TABLE ENCRYPTION
- * ============================================================================
- * XOR-encrypted string table for sensitive data
- * Protects: C&C domain, ports, scanner strings, attack payloads
- * Key: 0xdeadbeef (change for production)
- * ============================================================================ */
-
 #define TABLE_KEY 0xdeadbeef
 
-/* Table entry IDs */
 #define TABLE_CNC_DOMAIN        0
 #define TABLE_CNC_PORT          1
 #define TABLE_SCAN_CB_PORT      2
@@ -34,7 +25,6 @@
 #define TABLE_MISC_WATCHDOG     17
 #define TABLE_MAX_KEYS          18
 
-/* Functions */
 void table_init(void);
 void table_unlock_val(uint8_t);
 void table_lock_val(uint8_t);

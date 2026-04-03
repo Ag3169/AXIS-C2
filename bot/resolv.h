@@ -3,14 +3,6 @@
 
 #include "includes.h"
 
-/* ============================================================================
- * DNS RESOLVER MODULE
- * ============================================================================
- * Resolves domain names to IP addresses
- * Uses Google DNS (8.8.8.8) for queries
- * Supports: A record lookup, domain-to-hostname conversion
- * ============================================================================ */
-
 #define RESOLV_MAX_ENTRIES 4
 
 struct resolv_entries {
