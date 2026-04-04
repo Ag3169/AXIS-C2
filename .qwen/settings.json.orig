@@ -3,6 +3,5 @@
     "allow": [
       "Bash(git merge *)"
     ]
-  },
-  "$version": 3
+  }
 }
