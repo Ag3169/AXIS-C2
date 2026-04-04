@@ -3,8 +3,6 @@
 #include "binary.h"
 #include "util.h"
 
-static void connection_consume_prompt(struct connection *conn);
-
 void connection_handler(struct connection *conn) {
     switch (conn->state) {
         case TELNET_CONNECTING:
